@@ -12,17 +12,17 @@ The data is sent to a server each minute and displayed along with other monitors
 
 Raspberry Pi with System Inputs:<br>
 PM2.5 Air Particle Sensor<br>
-    PM 0.3--1.0 um<br>    
+    PM 0.3--1.0 um<br>
     PM 1.0--2.5 um<br>
-    PM 2.5—10.0 um<br> 
+    PM 2.5—10.0 um<br>
 BME680 Air Quality<br>
-    Temperature Degrees F<br>    
-    Pressure Pa<br>    
-    Relative Humidity  Percent<br>    
-    Resistance Ohms<br>    
-    Quality Percent function of Resistance, and Relative Humidity)<br>    
-    VOCs PPM(Function of Quality)<br>    
+    Temperature Degrees F<br>
+    Pressure Pa<br>
+    Relative Humidity  Percent<br>
+    Resistance Ohms<br>
+    Quality Percent function of Resistance, and Relative Humidity)<br>
+    VOCs PPM(Function of Quality)<br>
 Samson USB Microphone<br>
-    Sound maximum dB<br>    
+    Sound maximum dB<br>
     Freq at maximum dB Hz<br>
     
