@@ -63,8 +63,7 @@
 			4	Pressure Pa (hPa x 100)
 			5	RH   Percent (x 100)
 			6	Ohms 0-300,000 Ohms
-			MQ-4 Methane monitor via ADS1115 A/D
-			7	Methane ch4
+			7	Methane
 			Samson Microphone - USB
 			http://www.samsontech.com/samson/products/microphones/usb-microphones/gomic/
 			8	SoundDb  dB
@@ -87,10 +86,11 @@
 			}
 
 			// save the data in the database
-			$Underscore = strpos($ThisFile, "_");
+			$Underscore = strpos($ThisFile, "_",15); // 2017-01-05 15_51_1.txt -- get the second underscore
 			$Extn = strpos($ThisFile, ".txt");
 			echo "Underscore:$Underscore Extn:$Extn " . "<br>";
-			$FileDate = substr($ThisFile, 0, $Underscore) . ":00";  // 2017-01-05 15:51_1.txt			
+			$FileDate = substr($ThisFile, 0, $Underscore) . ":00";  // 2017-01-05 15_51:00
+			$FileDate = str_replace("_", ":", $FileDate); // 2017-01-05 15:51:00
 			$iLoc = substr($ThisFile,$Underscore+1,$Extn-$Underscore-1); // 1			
 			echo "FileDate: $FileDate Loc: $iLoc " . "<br>";
 			$quality = CalcQual($iLoc,$MinuteAve); // quality
