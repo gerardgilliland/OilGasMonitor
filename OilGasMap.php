@@ -239,7 +239,7 @@
 		function doNothing() {}
 		</script>
 		<script async defer
-			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_MCmPQPSTE0eNY8zXEGzkmziLFQx_IMM&callback=initMap">
+			src="https://maps.googleapis.com/maps/api/js?key=ContactMe&callback=initMap">
 		</script>
 
 <?php
