@@ -7,11 +7,10 @@ https://learn.adafruit.com/pm25-air-quality-sensor
 1	PM 2.5 um
 2	PM 10  um
 BMI680 Air Quality - I2C
-3	Temp Degrees C x 100
-4	Pressure Pa (hPa x 100)
+3	Temp Degrees F
+4	Pressure Pa 
 5	RH   Percent (x 100)
 6	Ohms 0-300,000 Ohms
-MQ-4 Methane monitor via ADS1115 A/D
 7	Methane ppm -- place holder -- input removed
 Samson Microphone - USB
 http://www.samsontech.com/samson/products/microphones/usb-microphones/gomic/
@@ -21,6 +20,7 @@ http://www.samsontech.com/samson/products/microphones/usb-microphones/gomic/
 # https://docs.python.org/3.5/library/multiprocessing.html
 # https://dsp.stackexchange.com/questions/32076/fft-to-spectrum-in-decibel
 
+# import Adafruit_ADS1x15 # A/D converer
 from datetime import datetime
 from multiprocessing import Process, Queue
 from picamera import PiCamera
@@ -37,7 +37,9 @@ import operator
 import bme680
 
 
-Location = 99 # will be assigned
+# adc = Adafruit_ADS1x15.ADS1115()
+# GAIN = 1 # set to 1
+Location = 1
 loc = str(Location)
 port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=2.0)
 root = "/home/pi/OilGasMonitor/Scan/"
@@ -115,7 +117,7 @@ def record(q, wavename, recordseconds):
     wf.writeframes(b''.join(frames))
     wf.close()
     dtn = datetime.now()
-    print("* done recording ", dtn)    
+    # print("* done recording ", dtn)    
 #end record    
 
 def dbfft(x, fs, win=None, ref=32768):
@@ -158,9 +160,9 @@ def dbfft(x, fs, win=None, ref=32768):
     if maxdb < s_dbfs.any():
         # maxdb = s_dbfs.max()
         max_index, maxdb = max(enumerate(s_dbfs), key=operator.itemgetter(1))
-        #print ("max_index=", max_index)
+        # print ("max_index=", max_index)
         freqmxdb = freq[max_index]
-        #print ("max dB=", maxdb, " freq at max dB=", fmxdb)
+        # print ("max dB=", maxdb, " freq at max dB=", fmxdb)
     
     #freq = int(freq)
     #db = int(s_dbfs)
@@ -168,7 +170,7 @@ def dbfft(x, fs, win=None, ref=32768):
     return freqmxdb, maxdb
 
 
-def spectrum(q, prevwavename, prevfilename, cameraname):
+def spectrum(q, prevwavename, prevfilename, prevcameraname):
     global savedb
     global root
     
@@ -190,25 +192,35 @@ def spectrum(q, prevwavename, prevfilename, cameraname):
         cs = open (cmdsound,"r")
         dblimit = int(cs.read())
         cs.close
+        cmddbK = "cmddbK.txt"
+        cdbK = open (cmddbK,"r")
+        K = int(cdbK.read())
+        cdbK.close
 
+        # Scale from dBFS to dB
+        maxdb = int(maxdb + K)
+		
+        # in case of error use zeros so file transfers
+        if maxdb < 0:
+            maxdb = 0
+        if freqmxdb < 0:
+            freqmxdb = 0
+			
         # if a low maxdb then delete the wave file else save it for off line analysis
         if maxdb < dblimit: 
             os.remove(root + prevwavename)
             
         else:
             camera = PiCamera()
+            #camera.rotate = 180  # if needed
             camera.start_preview()
             camera.annotate_text_size = 60
             camera.brightness = 50 # I haven't messed with this
             sdtn = str(dtn)
             camera.annotate_text = sdtn[:16]
-            camera.capture(root + cameraname)
+            camera.capture(root + prevcameraname)
             camera.stop_preview()
             
-        # Scale from dBFS to dB
-        K = 0
-        #db = int(s_dbfs + K)
-       
         fnam = open (root + prevfilename,"a") 
         s = str(int(maxdb)) + "," + str(int(freqmxdb)) + "\n"
         fnam.write(s)
@@ -228,12 +240,12 @@ def spectrum(q, prevwavename, prevfilename, cameraname):
             print("* sleep 7 ", dtn)    
             time.sleep(7)
             dtn = datetime.now()
-            print("* run LoadMonitor.php ", dtn)    
+            # print("* run LoadMonitor.php ", dtn)    
             import requests
             r = requests.get('https://www.modelsw.com/OilGasMonitor/LoadMonitor.php')
             dtn = datetime.now()
             # r = 200 -- the server successfully answered the http request  
-            print("* done LoadMonitor.php status:", str(r), " ", dtn)
+            # print("* done LoadMonitor.php status:", str(r), " ", dtn)
         
 #end spectrum
 
@@ -242,10 +254,10 @@ def savefile(prevfilename):
     global root
     
     dtn = datetime.now()
-    print("* start saving ", dtn)
+    # print("* start saving ", dtn)
     
     if prevfilename > "":
-        srv = pysftp.Connection(host="host", username="username", password="password")
+        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-1", password="ContactMe")
         srv.put(root + prevfilename)
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
@@ -303,16 +315,21 @@ def monitor(q, rng, filename):
         # Pause for 5 seconds.
         time.sleep(wait)
         
+        #for i in range(4): # I am only using v[0]
+            # Read the specified ADC channel using the previously set gain value.
+        #    v[i] = adc.read_adc(i, gain=GAIN)
+        #    methane[i] += v[i]
+
         rcv_list = []
         rcv = read_pm_line(port) # read the pms25 port
         # ACTUAL
-        #p[0] = rcv[10] * 256 + rcv[11] # 0.3 to 1.0 um
-        #p[1] = rcv[12] * 256 + rcv[13] # 1.0 to 2.5 um
-        #p[2] = rcv[14] * 256 + rcv[15] # 2.5 to 10.0 um
+        p[0] = rcv[10] * 256 + rcv[11] # 0.3 to 1.0 um
+        p[1] = rcv[12] * 256 + rcv[13] # 1.0 to 2.5 um
+        p[2] = rcv[14] * 256 + rcv[15] # 2.5 to 10.0 um
         # TEST (higher numbers)
-        p[0] = rcv[16] * 256 + rcv[17] # 0.3 to 1.0 um
-        p[1] = rcv[18] * 256 + rcv[19] # 1.0 to 2.5 um
-        p[2] = rcv[20] * 256 + rcv[21] # 2.5 to 10.0 um
+        #p[0] = rcv[16] * 256 + rcv[17] # 0.3 to 1.0 um
+        #p[1] = rcv[18] * 256 + rcv[19] # 1.0 to 2.5 um
+        #p[2] = rcv[20] * 256 + rcv[21] # 2.5 to 10.0 um
         for i in range(3):
             pms[i] += p[i]
           
@@ -328,8 +345,11 @@ def monitor(q, rng, filename):
 
         # print the values.
         dtn = datetime.now()
-        print('pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])) + " dtn:" + str(dtn))       
+        # print('pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])) + " dtn:" + str(dtn))       
         
+    #for i in range(4):    
+    #    methane[i] = methane[i]/rng+0.5
+
     for i in range(3):    
         pms[i] = pms[i]/rng+0.5
 
@@ -354,9 +374,9 @@ def monitor(q, rng, filename):
     
     fnam.close()
     
-    print ("monitor locArray=", locArray)
+    # print ("monitor locArray=", locArray)
     dtn = datetime.now()
-    print("* done monitoring ", dtn)    
+    # print("* done monitoring ", dtn)    
 # end monitor
    
    
@@ -370,41 +390,44 @@ def main():
     isRunning = cmd
     
     dtn = datetime.now()
-    print ("mainloop ", dtn)
+    # print ("mainloop ", dtn)
     wait = 60 - dtn.second
     print ("wait:" + str(wait))
     time.sleep(wait)
     print (" isRunning")
     filename = ""
-    wavename = ""    
+    wavename = ""
+    cameraname = ""
         
     while isRunning == cmd:
         prevfilename = filename
         prevwavename = wavename
-        
+        prevcameraname = cameraname
+		
         dtn = datetime.now()
         rng = 12  
         sdtn = str(dtn)
-        basename = sdtn[:16] + "_" + loc        
+        #basename = sdtn[:16] + "_" + loc   # was 2018-05-17 02:21_1  colon won't transfer to windows os    
+        basename = sdtn[:13] + "_" + sdtn[14:16] + "_" + loc    # now 2018-05-17 02_21_1     
         filename = basename + ".txt"
-        wavename = basename + ".wav"
+        wavename = basename + ".wav"		
         cameraname = basename + ".png"
         recordseconds = 60 - dtn.second
         
         q = Queue()        
         mon = Process (target=monitor, args=(q, rng, filename))
         dtn = datetime.now()
-        print ("* start monitor ", dtn, " rng", rng, " filename ", filename)
+        # print ("* start monitor ", dtn, " rng", rng, " filename ", filename)
         mon.start()
         
         rec = Process(target=record, args=(q, wavename, recordseconds))
         dtn = datetime.now()
-        print ("* start record ", dtn, " wavename ", wavename, " recordseconds ", recordseconds)
+        # print ("* start record ", dtn, " wavename ", wavename, " recordseconds ", recordseconds)
         rec.start()
 
-        spec = Process(target=spectrum, args=(q, prevwavename, prevfilename, cameraname))
+        spec = Process(target=spectrum, args=(q, prevwavename, prevfilename, prevcameraname))
         dtn = datetime.now()
-        print ("* start spectrum ", dtn, " prevwavename ", prevwavename, " prevfilename ", prevfilename, " cameraname ", cameraname)
+        # print ("* start spectrum ", dtn, " prevwavename ", prevwavename, " prevfilename ", prevfilename, " prevcameraname ", prevcameraname)
         spec.start()
                
         mon.join()
@@ -415,7 +438,7 @@ def main():
         cmd = int(cf.read())
         cf.close
         if isRunning != cmd:
-            print ("check interrupt")
+            # print ("check interrupt")
             if cmd < 0:
                 import os
                 os.system("sudo shutdown -h now")
