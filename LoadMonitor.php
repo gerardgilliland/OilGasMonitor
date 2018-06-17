@@ -197,9 +197,9 @@
 		echo " baseline: $gas_baseline, cnt: $cnt<br>";		
 		$gas = $MinuteAve[6]; // Ohms
 		$gas_parts = ($gas_baseline - $gas) / $gas_baseline; // parts
-		$ppm = round(($gas_parts * 1000000) / $gas_baseline);   // parts/baseline = ppm/1000000 -> 1000000*parts=ppm*baseline -> (1000000*parts)/baseline
-		echo "ppm baseline: $gas_baseline, gas: $gas, parts: $gas_parts, ppm: $ppm<br>";
-		return $ppm;
+		$ppb = round(($gas_parts * 1000000000) / $gas_baseline);   // parts/baseline = ppb/1000000000 -> 1000000000*parts=ppb*baseline -> (1000000000*parts)/baseline
+		echo "ppb baseline: $gas_baseline, gas: $gas, parts: $gas_parts, ppb: $ppb<br>";
+		return $ppb;
 
 	}
 	

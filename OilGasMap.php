@@ -1,4 +1,5 @@
 <?php
+// contract.php
 // header("Cache-Control: no-cache, must-revalidate");
 // header("Pragma: no-cache");
 // header("Expires: Mon,26 Jul 1997 05:00:00 GMT");
@@ -193,7 +194,7 @@
 					infowincontent.appendChild(document.createElement('br'));	
 					
 					text = document.createElement('text');
-					text.textContent = " pms<1.0=" + pm1 + ", pms<2.5=" + pm25 + ", pms<10.0=" + pm10;
+					text.textContent = " pm<1.0=" + pm1 + ", pm<2.5=" + pm25 + ", pm<10.0=" + pm10;
 					infowincontent.appendChild(text);
 					infowincontent.appendChild(document.createElement('br'));		
 					
@@ -214,8 +215,8 @@
 		function plotid(id) {
 			<!-- alert('plot id:' + id); -->
 			<!-- window.open("<a href='Plotid.html#'<?php id ?> target='_blank'></a>") -->
-			<!-- window.open("https://www.modelsw.com/OilGasMonitor/Plotid.html#1" target="_blank") -->
-			window.location.href = "https://www.modelsw.com/OilGasMonitor/Plotid.php?id="+id;
+			<!-- window.open("https://www.modelsw.com/OilGasMonitor/PlotId.html#1" target="_blank") -->
+			window.location.href = "https://www.modelsw.com/OilGasMonitor/PlotId.php?id="+id;
 			
 		}
 

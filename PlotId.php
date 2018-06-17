@@ -65,8 +65,8 @@
 			$MaxV = $row[0];
 			$MaxVI = pow(10,intval(strlen(strval($MaxV))-1));
 			$MaxV= intval($MaxV/$MaxVI)*$MaxVI+$MaxVI;
-			if ($MaxV < 10) {
-				$MaxV = 10;
+			if ($MaxV < 500) {
+				$MaxV = 500;
 			}
 			//$MaxM = $row[1];
 			//$MaxMI = pow(10,intval(strlen(strval($MaxM))-1));
@@ -304,7 +304,7 @@
 			<li>Quality and VOC</li>
 				<?php PlotProfileMonitor("voc") ?> 
 				<IMG SRC="imageV.png"></br>
-				Quality (Blue)<?php echo " 0 to 100 % " ?> VOC (Red)<?php echo " 0 to $MaxV ppm " ?> </br>
+				Quality (Blue)<?php echo " 0 to 100 % " ?> VOC (Red)<?php echo " 0 to $MaxV ppb " ?> </br>
 				</br>
 			<li>Temperature and Relative Humidity</li>
 				<?php PlotProfileMonitor("trh") ?> 
