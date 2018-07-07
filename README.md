@@ -28,3 +28,6 @@ VOCs PPM (Function of Quality)<br>
 Samson USB Microphone<br>
 Sound maximum dB<br>
 Freq at maximum dB Hz<br> 
+
+Please see detail:<br>
+https://www.modelsw.com/OilGasMonitor/Define.php<br>
