@@ -1,5 +1,5 @@
 <?php
-// contract.php
+// PlotId.php
 // header("Cache-Control: no-cache, must-revalidate");
 // header("Pragma: no-cache");
 // header("Expires: Mon,26 Jul 1997 05:00:00 GMT");
@@ -21,7 +21,7 @@
 	global $link_id;
 	global $id;
 	global $date, $startDate;
-	global $MaxD, $MaxF, $MaxH, $MaxM, $MaxT, $MinT, $rangeT, $MaxV, $MaxY;
+	global $MaxD, $MaxF, $MaxH, $MaxM, $MaxT, $MinT, $rangeT, $MaxV, $MaxY, $MinP, $MaxP, $rangeP, $MinkP, $MaxkP;
 	$link_id = db_connect();
 
 
@@ -49,7 +49,7 @@
 		global $startDate, $date;
 		global $link_id;
 		global $id;
-		global $MaxD, $MaxF, $MaxH, $MaxM, $MaxT, $MinT, $rangeT, $MaxV, $MaxY;
+		global $MaxD, $MaxF, $MaxH, $MaxM, $MaxT, $MinT, $rangeT, $MaxV, $MaxY, $MinP, $MaxP, $rangeP, $MinkP, $MaxkP;
 		echo "Start Date: $startDate -- End Date: $date<br>";
        
 		if ($plt == "voc") {
@@ -130,6 +130,22 @@
 			$MaxT = intval($MaxT * 10);
 			$rangeT = 60;
 			$MinT = $MaxT - $rangeT;
+			$qry = "SELECT Min(Press), Max(Press) FROM tblMonitor WHERE Loc = $id AND Date > '$startDate' ORDER BY Date";
+			$rs = mysqli_query($link_id, $qry);
+			$cntr = mysqli_num_rows($rs);
+			mysqli_data_seek($rs, 0);
+			// 83809 to	84220 -- I want 83000 to 85000
+			$row = mysqli_fetch_row($rs); 
+			$MinP = $row[0];  // 83809
+			$MinP = intval($MinP / 1000); // 83
+			$MinP = intval($MinP * 1000); 
+			$MaxP = $row[1];  // 84220
+			$MaxP += 1000; 	  // 85220
+			$MaxP = intval($MaxP / 1000);  // 85 			
+			$MaxP = intval($MaxP * 1000);  
+			$rangeP = $MaxP - $MinP;
+			$MinkP = $MinP / 1000;
+			$MaxkP = $MaxP / 1000;
 			//$MaxTI = pow(10,intval(strlen(strval($MaxT))-1)); 
 			//$MaxT = intval($MaxT/$MaxTI)*$MaxTI+$MaxTI;  			
 			$MaxH = 100;
@@ -139,6 +155,7 @@
 			$white = ImageColorAllocate($imageT,255,255,255);
 			$red = ImageColorAllocate($imageT,255,0,0); 
 			$blue = ImageColorAllocate($imageT,0,0,255);
+			$green = ImageColorAllocate($imageT,0,255,0);
 			$black = ImageColorAllocate($imageT,0,0,0);
 			ImageLine($imageT,0,128,720,128,$black);     
 			ImageLine($imageT,0,0,720,0,$black);  
@@ -146,13 +163,13 @@
 			ImageLine($imageT,720,255,0,255,$black);  
 			ImageLine($imageT,0,255,0,0,$black);  			
 			
-			$qry = "SELECT Temp, RH FROM tblMonitor WHERE Loc = $id AND Date > '$startDate' ORDER BY Date";
+			$qry = "SELECT Temp, RH, Press FROM tblMonitor WHERE Loc = $id AND Date > '$startDate' ORDER BY Date";
 			//echo "$qry<br>";
 			$rs = mysqli_query($link_id, $qry);
 			$cntr = mysqli_num_rows($rs);
 			//echo "cntr=$cntr<br>";
 			
-			$lineCntr = 2;
+			$lineCntr = 3;
 			$prev[$lineCntr];
 			mysqli_data_seek($rs, 0);
 			$row = mysqli_fetch_row($rs); 
@@ -160,6 +177,9 @@
 			ImageLine($imageT,0,255-(($prev[0]-$MinT)/$rangeT)*255,0,255-(($prev[0]-$MinT)/$rangeT)*255,$red);
 			$prev[1] = $row[1];
 			ImageLine($imageT,0,255-($prev[1]/$MaxH)*255,0,255-($prev[1]/$MaxH)*255,$blue);
+			$prev[2] = $row[2];
+			ImageLine($imageT,0,255-(($prev[2]-$MinP)/$rangeP)*255,0,255-(($prev[2]-$MinP)/$rangeP)*255,$green);
+			
 			for ($i = 1; $i< $cntr; $i++) { 
 				$j = $i/2;
 				$k = $j+1;
@@ -167,8 +187,10 @@
 				$row = mysqli_fetch_row($rs); 
 				ImageLine($imageT,$j,255-(($prev[0]-$MinT)/$rangeT)*255,$k,255-(($row[0]-$MinT)/$rangeT)*255,$red);
 				ImageLine($imageT,$j,255-($prev[1]/$MaxH)*255,$k,255-($row[1]/$MaxH)*255,$blue);
+				ImageLine($imageT,$j,255-(($prev[2]-$MinP)/$rangeP)*255,$k,255-(($row[2]-$MinP)/$rangeP)*255,$green);
 				$prev[0] = $row[0];
 				$prev[1] = $row[1];
+				$prev[2] = $row[2];
 			}
 			ImagePNG($imageT,"imageT.png");
 			ImageDestroy($imageT);     
@@ -305,22 +327,24 @@
 				<?php PlotProfileMonitor("voc") ?> 
 				<IMG SRC="imageV.png"></br>
 				Quality (Blue)<?php echo " 0 to 100 % " ?> VOC (Red)<?php echo " 0 to $MaxV ppb " ?> </br>
-				</br>
-			<li>Temperature and Relative Humidity</li>
+				</li>
+			<li>Temperature, Relative Humidity, and Pressure</li>
 				<?php PlotProfileMonitor("trh") ?> 
 				<IMG SRC="imageT.png"></br>
-				Temperature (Red)<?php echo " $MinT to $MaxT deg F" ?> -- Relative Humidity (Blue)<?php echo " 0 to $MaxH %" ?> </br>
-				</br>
+				Temperature (Red)<?php echo " $MinT to $MaxT deg F" ?> 
+				-- Relative Humidity (Blue)<?php echo " 0 to $MaxH %" ?> 
+				-- Pressure (Green)<?php echo " $MinkP to $MaxkP kPa" ?> </br>
+				</li>
 			<li>Sound: Decibels and Frequency</li>			
 				<?php PlotProfileMonitor("dbf") ?> 
 				<IMG SRC="imageD.png"></br>
 				Decibels (Red)<?php echo " 0 to $MaxD db " ?> -- Frequency (Blue)<?php echo " 0 to $MaxF hz" ?> </br>
-				</br>
+				</li>
 			<li>Particles</li>
 				<?php PlotProfileMonitor("pms") ?> 
 				<IMG SRC="imageP.png"></br>
 				PM 0.3 to 1.0 um (Red)  -- PM 1.0 to 2.5 um (Blue) -- PM 2.5 to 10.0 um (Green) <?php echo " 0 to $MaxY " ?>ug/m3 </br>
-				</br>
+				</li>
 		</ul>
 
 	  
