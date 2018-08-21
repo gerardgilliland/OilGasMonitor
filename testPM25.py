@@ -1,4 +1,4 @@
-#testPMS25.py
+#testPM25.py
 import serial
 import datetime
 
