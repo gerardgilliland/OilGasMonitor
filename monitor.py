@@ -117,7 +117,7 @@ def record(q, wavename, recordseconds):
     wf.writeframes(b''.join(frames))
     wf.close()
     dtn = datetime.now()
-    # print("* done recording ", dtn)    
+    print("* done recording ", dtn, " wavename ", wavename)    
 #end record    
 
 def dbfft(x, fs, win=None, ref=32768):
@@ -179,7 +179,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         
     else:
         dtn = datetime.now()
-        print("* start analyzing ", dtn)    
+        print("* start analyzing ", dtn, " prevwavename ", prevwavename)    
 
         # Load the file
         fs, signal = wf.read(root + prevwavename)
@@ -225,13 +225,15 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         s = str(int(maxdb)) + "," + str(int(freqmxdb)) + "\n"
         fnam.write(s)
         fnam.close()
+        dtn = datetime.now()
+        print("* save db and freq: ", dtn, " prevfilename ", prevfilename)
 
         fnam = open (root + prevfilename,"r")
         s = fnam.read()
         fnam.close()
 
         dtn = datetime.now()
-        print("data: ", s)
+        print("data: ", s, " prevfilename ", prevfilename)
         x = savefile(prevfilename)
         prevwavename = ""
         
@@ -240,12 +242,12 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
             print("* sleep 7 ", dtn)    
             time.sleep(7)
             dtn = datetime.now()
-            # print("* run LoadMonitor.php ", dtn)    
+            print("* run LoadMonitor.php ", dtn)    
             import requests
             r = requests.get('https://www.modelsw.com/OilGasMonitor/LoadMonitor.php')
             dtn = datetime.now()
             # r = 200 -- the server successfully answered the http request  
-            # print("* done LoadMonitor.php status:", str(r), " ", dtn)
+            print("* done LoadMonitor.php status:", str(r), " ", dtn)
         
 #end spectrum
 
@@ -257,7 +259,7 @@ def savefile(prevfilename):
     # print("* start saving ", dtn)
     
     if prevfilename > "":
-        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-1", password="ContactMe")
+        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-1", password="Gerard_M1")
         srv.put(root + prevfilename)
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
@@ -273,7 +275,7 @@ def savefile(prevfilename):
         os.remove(root + prevfilename)
         
     dtn = datetime.now()
-    print("* done saving ", dtn)
+    print("* done transfering ", dtn, " prevfilename ", prevfilename)
     prevfilename = ""
 
 # end savefile
@@ -452,4 +454,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
