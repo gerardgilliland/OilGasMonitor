@@ -110,6 +110,7 @@ def record(q, wavename, recordseconds):
 
     stream.stop_stream()
     stream.close()
+    mic.terminate()
     wf = wave.open(root + wavename, 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(mic.get_sample_size(FORMAT))
