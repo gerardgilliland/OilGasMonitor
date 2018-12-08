@@ -12,7 +12,7 @@ for i in range(p.get_device_count()):
 print ("\n\n")
 
 
-wavename = "testMic.wav"
+wavename = "/home/pi/Desktop/testMic.wav"
 recordseconds = 30
 dtn = datetime.now()
 print("* start recording ", dtn, " wavename ", wavename)
