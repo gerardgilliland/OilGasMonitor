@@ -15,8 +15,9 @@ BMI680 Air Quality - I2C
 Samson Microphone - USB
 http://www.samsontech.com/samson/products/microphones/usb-microphones/gomic/
     8 SoundDb  dB
-    9 Freq 	Hz
+    9 Freq  Hz
 """
+
 # https://docs.python.org/3.5/library/multiprocessing.html
 # https://dsp.stackexchange.com/questions/32076/fft-to-spectrum-in-decibel
 
@@ -118,8 +119,8 @@ def record(q, wavename, recordseconds):
     wf.writeframes(b''.join(frames))
     wf.close()
     dtn = datetime.now()
-    print("* done recording ", dtn, " wavename ", wavename)    
-#end record    
+    print("* done recording ", dtn, " wavename ", wavename)
+#end record
 
 def dbfft(x, fs, win=None, ref=32768):
     """
@@ -180,7 +181,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 
     else:
         dtn = datetime.now()
-        print("* start analyzing ", dtn, " prevwavename ", prevwavename)    
+        print("* start analyzing ", dtn, " prevwavename ", prevwavename)
 
         # Load the file
         fs, signal = wf.read(root + prevwavename)
@@ -208,7 +209,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
             freqmxdb = 0
 
         # if a low maxdb then delete the wave file else save it for off line analysis
-        if maxdb < dblimit: 
+        if maxdb < dblimit:
             os.remove(root + prevwavename)
 
         else:
@@ -238,12 +239,12 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         x = savefile(prevfilename)
         prevwavename = ""
 
-        if Location == 1: 
+        if Location == 1:
             dtn = datetime.now()
-            print("* sleep 7 ", dtn)    
+            print("* sleep 7 ", dtn)
             time.sleep(7)
             dtn = datetime.now()
-            print("* run LoadMonitor.php ", dtn)    
+            print("* run LoadMonitor.php ", dtn)
             import requests
             r = requests.get('https://www.modelsw.com/OilGasMonitor/LoadMonitor.php')
             dtn = datetime.now()
@@ -270,7 +271,7 @@ def savefile(prevfilename):
 
         # Prints out the directories and files, line by line
         #for i in data:
-        #    print (i)	
+        #    print (i)  
         #    if (i == prevfilename):
         #        os.remove(root + prevfilename)
         os.remove(root + prevfilename)
@@ -343,20 +344,20 @@ def monitor(q, rng, filename):
             s[2] = int(sensor.data.humidity + 0.5)
             s[3] = int(sensor.data.gas_resistance)
 
-        for i in range(4):    
-            scns[i] += s[i]    
+        for i in range(4):
+            scns[i] += s[i]
 
         # print the values.
         dtn = datetime.now()
         # print('pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])) + " dtn:" + str(dtn))       
 
-    #for i in range(4):    
+    #for i in range(4):
     #    methane[i] = methane[i]/rng+0.5
 
-    for i in range(3):    
+    for i in range(3):
         pms[i] = pms[i]/rng+0.5
 
-    for i in range(4):    
+    for i in range(4):
         scns[i] = scns[i]/rng+0.5
 
     locArray[0]=int(pms[0]) # pms1.0
@@ -368,8 +369,8 @@ def monitor(q, rng, filename):
     locArray[6]=int(scns[3]) # VOC Ohms
     locArray[7]=int(0) # int(methane[0]) # ppm
 
-    fnam = open (root + filename,"w") 
-    for i in range(8):    # will append two more in spectrum
+    fnam = open (root + filename,"w")
+    for i in range(8): # will append two more in spectrum
         sep = ","
         s = str(locArray[i]) + sep
         fnam.write(s)
@@ -407,16 +408,16 @@ def main():
         prevcameraname = cameraname
 
         dtn = datetime.now()
-        rng = 12  
+        rng = 12
         sdtn = str(dtn)
-        #basename = sdtn[:16] + "_" + loc   # was 2018-05-17 02:21_1  colon won't transfer to windows os    
-        basename = sdtn[:13] + "_" + sdtn[14:16] + "_" + loc    # now 2018-05-17 02_21_1     
+        #basename = sdtn[:16] + "_" + loc   # was 2018-05-17 02:21_1  colon won't transfer to windows os
+        basename = sdtn[:13] + "_" + sdtn[14:16] + "_" + loc    # now 2018-05-17 02_21_1
         filename = basename + ".txt"
-        wavename = basename + ".wav"		
+        wavename = basename + ".wav"
         cameraname = basename + ".png"
         recordseconds = 60 - dtn.second
 
-        q = Queue()        
+        q = Queue()
         mon = Process (target=monitor, args=(q, rng, filename))
         dtn = datetime.now()
         # print ("* start monitor ", dtn, " rng", rng, " filename ", filename)
