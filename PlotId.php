@@ -320,8 +320,8 @@
 ?>
 </head>
 
-	<body bgcolor="#FAF0E6">
-    <h3>Oil and Gas Monitor Plots</h3>
+<body bgcolor="#FAF0E6">
+    <h3>Oil and Gas Monitor Plots &nbsp;&nbsp;&nbsp;&nbsp;id <?php echo $id ?></h3>
 		<ul>		
 			<li>Quality and VOC</li>
 				<?php PlotProfileMonitor("voc") ?> 
