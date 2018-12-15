@@ -36,6 +36,7 @@ import matplotlib.pyplot as plt
 import scipy.io.wavfile as wf
 import operator
 import bme680
+import pyautogui  # automate key strokes to clear the shell
 
 
 # adc = Adafruit_ADS1x15.ADS1115()
@@ -393,7 +394,8 @@ def main():
     isRunning = cmd
 
     dtn = datetime.now()
-    # print ("mainloop ", dtn)
+    dow = dtn.weekday()
+    print ("mainloop ", dtn, "weekday", dow)
     wait = 60 - dtn.second
     print ("wait:" + str(wait))
     time.sleep(wait)
@@ -450,6 +452,15 @@ def main():
                 os.system("sudo reboot -h now")
             else: # incremented
                 exit()
+
+        if dow != dtn.weekday():
+            dow = dtn.weekday()
+            # clear the shell ctrl+l
+            pyautogui.keyDown('ctrl')
+            pyautogui.keyDown('l')
+            pyautogui.keyUp('l')
+            pyautogui.keyUp('ctrl')
+
 
 
 if __name__ == '__main__':
