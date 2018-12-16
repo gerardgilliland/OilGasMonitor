@@ -223,6 +223,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
             camera.annotate_text = sdtn[:16]
             camera.capture(root + prevcameraname)
             camera.stop_preview()
+            camera.close()
 
         fnam = open (root + prevfilename,"a") 
         s = str(int(maxdb)) + "," + str(int(freqmxdb)) + "\n"
