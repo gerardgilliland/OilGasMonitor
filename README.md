@@ -31,3 +31,8 @@ Freq at maximum dB Hz<br>
 
 Please see detail:<br>
 https://www.modelsw.com/OilGasMonitor/Define.php<br>
+
+The monitors values are displayed on OilGasMap<br>
+https://www.modelsw.com/OilGasMonitor/OilGasMap.php<br>
+and PlotId<br>
+https://www.modelsw.com/OilGasMonitor/PlotId.php<br>
