@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+# monitor.py
+
 # Monitor Oil and Gas 
 """
 Inputs:
@@ -36,7 +39,6 @@ import matplotlib.pyplot as plt
 import scipy.io.wavfile as wf
 import operator
 import bme680
-import pyautogui  # automate key strokes to clear the shell
 
 
 # adc = Adafruit_ADS1x15.ADS1115()
@@ -48,15 +50,14 @@ root = "/home/pi/OilGasMonitor/Scan/"
 savedb = -120
 sensor = bme680.BME680()
 
-
-print("Calibration data for BME680:")
+print("Calibration data for BME680:", flush=True)
 for name in dir(sensor.calibration_data):
 
     if not name.startswith('_'):
         value = getattr(sensor.calibration_data, name)
 
         if isinstance(value, int):
-            print("{}: {}".format(name, value))
+            print("{}: {}".format(name, value), flush=True)
 
 # These oversampling settings can be tweaked to 
 # change the balance between accuracy and noise in
@@ -68,12 +69,12 @@ sensor.set_temperature_oversample(bme680.OS_8X)
 sensor.set_filter(bme680.FILTER_SIZE_3)
 sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
-print("\n\nInitial reading BME680:")
+print("\n\nInitial reading BME680:", flush=True)
 for name in dir(sensor.data):
     value = getattr(sensor.data, name)
 
     if not name.startswith('_'):
-        print("{}: {}".format(name, value))
+        print("{}: {}".format(name, value), flush=True)
 
 sensor.set_gas_heater_temperature(320)
 sensor.set_gas_heater_duration(150)
@@ -84,17 +85,17 @@ sensor.select_gas_heater_profile(0)
 # sensor.set_gas_heater_profile(200, 150, nb_profile=1)
 # sensor.select_gas_heater_profile(1)
 
-print ("\n\nMatch the input_device_index in record() with your mic:")
+print ("\n\nMatch the input_device_index in record() with your mic:", flush=True)
 p = pyaudio.PyAudio()
 for i in range(p.get_device_count()):
     dev = p.get_device_info_by_index(i)
-    print((i,dev['name'],dev['maxInputChannels']))
-print ("\n\n")
+    print((i,dev['name'],dev['maxInputChannels']), flush=True)
+print ("\n\n", flush=True)
 
 
 def record(q, wavename, recordseconds):
     dtn = datetime.now()
-    print("* start recording ", dtn, " wavename ", wavename)
+    print("* start recording ", dtn, " wavename ", wavename, flush=True)
     mic = pyaudio.PyAudio()
     RATE = 44100
     CHUNK = 4096
@@ -121,7 +122,7 @@ def record(q, wavename, recordseconds):
     wf.writeframes(b''.join(frames))
     wf.close()
     dtn = datetime.now()
-    print("* done recording ", dtn, " wavename ", wavename)
+    print("* done recording ", dtn, " wavename ", wavename, flush=True)
 #end record
 
 def dbfft(x, fs, win=None, ref=32768):
@@ -166,7 +167,7 @@ def dbfft(x, fs, win=None, ref=32768):
         max_index, maxdb = max(enumerate(s_dbfs), key=operator.itemgetter(1))
         # print ("max_index=", max_index)
         freqmxdb = freq[max_index]
-        # print ("max dB=", maxdb, " freq at max dB=", fmxdb)
+        # print ("max dB=", maxdb, " freq at max dB=", fmxdb, flush=True)
 
     #freq = int(freq)
     #db = int(s_dbfs)
@@ -183,7 +184,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 
     else:
         dtn = datetime.now()
-        print("* start analyzing ", dtn, " prevwavename ", prevwavename)
+        print("* start analyzing ", dtn, " prevwavename ", prevwavename, flush=True)
 
         # Load the file
         fs, signal = wf.read(root + prevwavename)
@@ -192,11 +193,11 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         win = np.hamming(N)
         freqmxdb, maxdb = dbfft(signal[0:N], fs, win)
 
-        cmdsound = "cmdsound.txt"
+        cmdsound = "/home/pi/cmdsound.txt"
         cs = open (cmdsound,"r")
         dblimit = int(cs.read())
         cs.close
-        cmddbK = "cmddbK.txt"
+        cmddbK = "/home/pi/cmddbK.txt"
         cdbK = open (cmddbK,"r")
         K = int(cdbK.read())
         cdbK.close
@@ -231,14 +232,14 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         fnam.write(s)
         fnam.close()
         dtn = datetime.now()
-        print("* save db and freq: ", dtn, " prevfilename ", prevfilename)
+        print("* save db and freq: ", dtn, " prevfilename ", prevfilename, flush=True)
 
         fnam = open (root + prevfilename,"r")
         s = fnam.read()
         fnam.close()
 
         dtn = datetime.now()
-        print("data: ", s, " prevfilename ", prevfilename)
+        print("data: ", s, " prevfilename ", prevfilename, flush=True)
         x = savefile(prevfilename)
         prevwavename = ""
 
@@ -247,12 +248,12 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
             print("* sleep 7 ", dtn)
             time.sleep(7)
             dtn = datetime.now()
-            print("* run LoadMonitor.php ", dtn)
+            print("* run LoadMonitor.php ", dtn, flush=True)
             import requests
             r = requests.get('https://www.modelsw.com/OilGasMonitor/LoadMonitor.php')
             dtn = datetime.now()
             # r = 200 -- the server successfully answered the http request  
-            print("* done LoadMonitor.php status:", str(r), " ", dtn)
+            print("* done LoadMonitor.php status:", str(r), " ", dtn, flush=True)
 
 #end spectrum
 
@@ -261,7 +262,7 @@ def savefile(prevfilename):
     global root
 
     dtn = datetime.now()
-    # print("* start saving ", dtn)
+    # print("* start saving ", dtn, flush=True)
 
     if prevfilename > "":
         srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
@@ -274,13 +275,13 @@ def savefile(prevfilename):
 
         # Prints out the directories and files, line by line
         #for i in data:
-        #    print (i)  
+        #    print (i, flush=True)
         #    if (i == prevfilename):
         #        os.remove(root + prevfilename)
         os.remove(root + prevfilename)
 
     dtn = datetime.now()
-    print("* done transfering ", dtn, " prevfilename ", prevfilename)
+    print("* done transfering ", dtn, " prevfilename ", prevfilename, flush=True)
     prevfilename = ""
 
 # end savefile
@@ -307,7 +308,7 @@ def monitor(q, rng, filename):
     sdtn = str(dtn)
     wait = (60 - dtn.second) / rng
 
-    print("* start monitoring ", dtn, " filename ", filename)
+    print("* start monitoring ", dtn, " filename ", filename, flush=True)
     locArray = [0]*8 # will add two more under spectrum
     # methane = [0.0]*4
     scns = [0.0]*4
@@ -329,8 +330,8 @@ def monitor(q, rng, filename):
 
         rcv_list = []
         rcv = read_pm_line(port) # read the pms25 port
-        # ACTUAL ug / m^3 
-        p[0] = rcv[10] * 256 + rcv[11] # 0.3 to 1.0 um 
+        # ACTUAL
+        p[0] = rcv[10] * 256 + rcv[11] # 0.3 to 1.0 um
         p[1] = rcv[12] * 256 + rcv[13] # 1.0 to 2.5 um
         p[2] = rcv[14] * 256 + rcv[15] # 2.5 to 10.0 um
         # TEST (higher numbers)
@@ -352,7 +353,7 @@ def monitor(q, rng, filename):
 
         # print the values.
         dtn = datetime.now()
-        # print('pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])) + " dtn:" + str(dtn))
+        # print('pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])) + " dtn:" + str(dtn), flush=True)       
 
     #for i in range(4):
     #    methane[i] = methane[i]/rng+0.5
@@ -380,15 +381,15 @@ def monitor(q, rng, filename):
 
     fnam.close()
 
-    # print ("monitor locArray=", locArray)
+    # print ("monitor locArray=", locArray, flush=True)
     dtn = datetime.now()
-    # print("* done monitoring ", dtn)
+    # print("* done monitoring ", dtn, flush=True)
 # end monitor
 
 
 def main():
     # Main loop.
-    cmdfile = "cmdfile.txt"
+    cmdfile = "/home/pi/cmdfile.txt"
     cf = open (cmdfile,"w")
     cmd = 1
     cf.write (str(cmd))
@@ -397,11 +398,11 @@ def main():
 
     dtn = datetime.now()
     dow = dtn.weekday()
-    print ("mainloop ", dtn, "weekday", dow)
+    print ("mainloop ", dtn, "weekday", dow, flush=True)
     wait = 60 - dtn.second
-    print ("wait:" + str(wait))
+    print ("wait:" + str(wait), flush=True)
     time.sleep(wait)
-    print (" isRunning")
+    print (" isRunning", flush=True)
     filename = ""
     wavename = ""
     cameraname = ""
@@ -424,17 +425,17 @@ def main():
         q = Queue()
         mon = Process (target=monitor, args=(q, rng, filename))
         dtn = datetime.now()
-        # print ("* start monitor ", dtn, " rng", rng, " filename ", filename)
+        # print ("* start monitor ", dtn, " rng", rng, " filename ", filename, flush=True)
         mon.start()
 
         rec = Process(target=record, args=(q, wavename, recordseconds))
         dtn = datetime.now()
-        # print ("* start record ", dtn, " wavename ", wavename, " recordseconds ", recordseconds)
+        # print ("* start record ", dtn, " wavename ", wavename, " recordseconds ", recordseconds, flush=True)
         rec.start()
 
         spec = Process(target=spectrum, args=(q, prevwavename, prevfilename, prevcameraname))
         dtn = datetime.now()
-        # print ("* start spectrum ", dtn, " prevwavename ", prevwavename, " prevfilename ", prevfilename, " prevcameraname ", prevcameraname)
+        # print ("* start spectrum ", dtn, " prevwavename ", prevwavename, " prevfilename ", prevfilename, " prevcameraname ", prevcameraname, flush=True)
         spec.start()
 
         mon.join()
@@ -445,9 +446,8 @@ def main():
         cmd = int(cf.read())
         cf.close
         if isRunning != cmd:
-            # print ("check interrupt")
+            # print ("check interrupt", flush=True)
             if cmd < 0:
-                import os
                 os.system("sudo shutdown -h now")
             elif cmd == 0:
                 import os
@@ -457,12 +457,8 @@ def main():
 
         if dow != dtn.weekday():
             dow = dtn.weekday()
-            # clear the shell ctrl+l
-            pyautogui.keyDown('ctrl')
-            pyautogui.keyDown('l')
-            pyautogui.keyUp('l')
-            pyautogui.keyUp('ctrl')
-
+            # clear the shell
+            os.system("clear")
 
 
 if __name__ == '__main__':
