@@ -353,7 +353,7 @@ def monitor(q, rng, filename):
 
         # print the values.
         dtn = datetime.now()
-        # print('pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])) + " dtn:" + str(dtn), flush=True)       
+        # print('pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])) + " dtn:" + str(dtn), flush=True)
 
     #for i in range(4):
     #    methane[i] = methane[i]/rng+0.5
