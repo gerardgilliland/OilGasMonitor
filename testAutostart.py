@@ -31,11 +31,10 @@ while isRunning == cmd:
 
     if cntr > 20:
         cntr = 0
-        # clear the shell -- requires thonny 3.0.8
+        # clear the shell
         pyautogui.keyDown('ctrl')  # hold down the ctrl key
         pyautogui.keyDown('l')     # press the l key
         pyautogui.keyUp('l')     # release the l
         pyautogui.keyUp('ctrl')    # release ctrl key
 
     time.sleep(wait)
-
