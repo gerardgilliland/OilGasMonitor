@@ -193,7 +193,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         # Load the file
         fs, signal = wf.read(root + prevwavename)
         # Take slice
-        N = 1024
+        N = 32768
         win = np.hamming(N)
         freqmxdb, maxdb = dbfft(signal[0:N], fs, win)
 
