@@ -1,0 +1,35 @@
+# Memory tests
+# Open and run in a seperate terminal (not the monitor) via VNC Viewer
+# save and compare on a weekly basis
+
+# RAM (Random Access Memory)
+pi@raspberrypi:~ $ free -h
+              total        used        free      shared  buff/cache   available
+Mem:           875M        222M        204M         20M        448M        576M
+Swap:           99M          0B         99M
+
+
+# Storage (disk or device free space)
+pi@raspberrypi:~ $ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        28G  8.4G   18G  32% /
+devtmpfs        434M     0  434M   0% /dev
+tmpfs           438M   24K  438M   1% /dev/shm
+tmpfs           438M   12M  427M   3% /run
+tmpfs           5.0M  4.0K  5.0M   1% /run/lock
+tmpfs           438M     0  438M   0% /sys/fs/cgroup
+/dev/mmcblk0p6   68M   22M   47M  32% /boot
+tmpfs            88M     0   88M   0% /run/user/1000
+/dev/mmcblk0p5   30M  398K   28M   2% /media/pi/SETTINGS
+
+
+# Work load listed by user (who)
+# The three numbers are load in the last 1,5,15 minutes 
+# 1.00 says the cpu is busy but no backlog
+# think of them as percent busy so 0.16 is 16% busy.
+pi@raspberrypi:~ $ w
+ 09:21:41 up 12 days,  1:26,  2 users,  load average: 0.16, 0.26, 0.17
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+pi       tty1     -                22Jan19 12days  0.45s  0.27s -bash
+pi       tty7     :0               22Jan19 12days 46:25   0.41s /usr/bin/lxsess
+
