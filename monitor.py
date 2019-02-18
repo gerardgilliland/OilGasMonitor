@@ -269,7 +269,7 @@ def savefile(prevfilename):
     # print(dtn, " * start saving ")
 
     if prevfilename > "":
-        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx)
+        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
         srv.put(root + prevfilename)
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
