@@ -462,8 +462,8 @@ def main():
 
         if dow != dtn.weekday():
             dow = dtn.weekday()
-            import os
-            os.system("clear")
+            #import os
+            #os.system("clear")
 
 
 
