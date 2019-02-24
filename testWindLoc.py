@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# WindLocTest.py
+# testWindLoc.py
 
 import requests
 from datetime import datetime
