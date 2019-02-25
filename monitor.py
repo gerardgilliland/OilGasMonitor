@@ -15,10 +15,13 @@ BMI680 Air Quality - I2C
     5 RH   Percent (x 100)
     6 Ohms 0-300,000 Ohms
     7 Methane ppm -- place holder -- input removed
+Wind - weather page 
+    8 Wind Direction degrees
+    9 Wind Speed mph
 Samson Microphone - USB
 http://www.samsontech.com/samson/products/microphones/usb-microphones/gomic/
-    8 SoundDb  dB
-    9 Freq  Hz
+    10 SoundDb  dB
+    11 Freq  Hz
 """
 
 # https://docs.python.org/3.5/library/multiprocessing.html
@@ -39,6 +42,7 @@ import numpy as np
 import scipy.io.wavfile as wf
 import operator
 import bme680
+import requests
 
 monlog = "/home/pi/Desktop/monitor.log"
 fmt="%(asctime)s %(message)s"
@@ -46,6 +50,7 @@ logging.basicConfig(filename=monlog, level=logging.WARN, format=fmt)
 
 # adc = Adafruit_ADS1x15.ADS1115()
 # GAIN = 1 # set to 1
+# change location from xx to your location number
 Location = xx
 loc = str(Location)
 port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=2.0)
@@ -94,6 +99,31 @@ for i in range(p.get_device_count()):
     dev = p.get_device_info_by_index(i)
     print((i,dev['name'],dev['maxInputChannels']))
 print ("\n\n")
+
+# get the wind location during startup
+url = requests.get("https://www.modelsw.com/OilGasMonitor/GetWindLoc.php?Loc="+loc)
+data = url.text
+j = data.find("Loc:")
+l = len("Loc:")
+j+=l
+k = data.find("<br>", j)
+sloc = data[j:k]
+if (loc == sloc):
+    j = data.find("WindLoc:",k)
+    l = len("WindLoc:")
+    j+=l
+    k = data.find("<br>", j)
+    if (k > j):
+        windLoc = data[j:k]
+    
+else:
+    print ("failed to get wind location")
+   
+url.close()
+data = ""
+print ("Loc:" + loc + " WindLoc:" + windLoc)
+windDir = 0 # will be updated in readwind
+windSpd = 0 # will be updated in readwind
 
 
 def record(q, wavename, recordseconds):
@@ -269,7 +299,7 @@ def savefile(prevfilename):
     # print(dtn, " * start saving ")
 
     if prevfilename > "":
-        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
+        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx)
         srv.put(root + prevfilename)
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
@@ -307,20 +337,19 @@ def read_pm_line(_port):
 def monitor(q, rng, filename):
     global root
     global sensor
-
+    global windDir, windSpd
     dtn = datetime.now()
     sdtn = str(dtn)
-    wait = (60 - dtn.second) / rng
+    wait = (60 - dtn.second) / rng   # approx 5 seconds
 
     print(dtn, " * start monitoring ", " filename ", filename)
-    locArray = [0]*8 # will add two more under spectrum
+    locArray = [0]*10 # will add two more under spectrum
     # methane = [0.0]*4
     scns = [0.0]*4
     pms = [0.0]*3
     # v = [0.0]*4 # methane
     s = [0.0]*4 # temp, press, rh, ohms
     p = [0.0]*3 # pms 1, 2.5, 10
-
 
     # sum the data
     for t in range(rng): # every 5 seconds
@@ -371,14 +400,16 @@ def monitor(q, rng, filename):
     locArray[0]=int(pms[0]) # pms1.0
     locArray[1]=int(pms[1]) # pms2.5
     locArray[2]=int(pms[2]) # pms10.
-    locArray[3]=int(scns[0]) # temp C * 100
+    locArray[3]=int(scns[0]) # temp degrees F
     locArray[4]=int(scns[1]) # pressure Pa
     locArray[5]=int(scns[2]) # Rh * 100
     locArray[6]=int(scns[3]) # VOC Ohms
-    locArray[7]=int(0) # int(methane[0]) # ppm
+    locArray[7]=int(0) # int(methane[0]) # ppm -- will (hopefully) become smog
+    locArray[8]=int(windDir) # degrees
+    locArray[9]=int(windSpd) # mph
 
     fnam = open (root + filename,"w")
-    for i in range(8): # will append two more in spectrum
+    for i in range(10): # will append two more in spectrum
         sep = ","
         s = str(locArray[i]) + sep
         fnam.write(s)
@@ -389,6 +420,68 @@ def monitor(q, rng, filename):
     dtn = datetime.now()
     # print(dtn, " * done monitoring ")    
 # end monitor
+
+def readwind():
+    global windDir, windSpd
+    #time.sleep(25) # get the data appoximately half way into the minute
+    url = requests.get("https://www.wunderground.com/personal-weather-station/dashboard?ID="+windLoc)
+    data = url.text
+    """  
+      <div id="windCompass" class="wx-data" data-station="KCOBROOM140" data-variable="wind_dir_degrees" data-update-effect="wind-compass" style="transform:rotate(216deg);">
+      <div class="dial">
+      <div class="arrow-direction"></div>
+      </div>
+      </div>
+      <div id="windCompassSpeed" class="wx-data" data-station="KCOBROOM140" data-variable="wind_speed">
+      <h4><span class="wx-value">
+      2.7
+      </span>
+      </h4>
+      mph
+      </div>
+     """
+    if (url != ""):
+        dtn = datetime.now()
+        j = data.find("windCompass")
+        j = data.find("transform:rotate(", j)
+        l = len("transform:rotate(")
+        j+=l
+        k = data.find("deg);", j)
+        windDir = data[j:k]
+        windDir = int(windDir)
+
+        j = data.find("windCompassSpeed", k)
+        j = data.find("wind_speed", j)
+        j = data.find("wx-value", j)
+        l = len("wx-value")+2
+        j+=l
+        k = data.find("</span>", j)
+        windSpd = data[j:k]
+        windSpd = windSpd.replace("\n", "")
+        windSpd = windSpd.strip()
+        windSpd = float(windSpd)
+        windSpd = int(windSpd * 10)
+        
+        j = data.find("</h4>", k)
+        l = len("</h4>")
+        j+=l
+        k = data.find("</div>", j)
+        windUnits = data[j:k]
+        windUnits = windUnits.replace("\n", "")
+        windUnits = windUnits.strip()
+        
+        dtn = datetime.now()
+        if (windUnits == "mph"): # I am not lost in the file so save the data 
+            print (dtn, " * windDir:" + str(windDir) + " windSpd:" + str(windSpd) + " windUnits:" + windUnits)
+        else:
+            windDir = 0
+            windSpd = 0
+            print (dtn, " I am lost in the wind file. ")
+
+    url.close()
+    data = ""
+
+# end readwind
 
 
 def main():
@@ -442,9 +535,16 @@ def main():
         # print (dtn, " * start spectrum ", " prevwavename ", prevwavename, " prevfilename ", prevfilename, " prevcameraname ", prevcameraname)
         spec.start()
 
+        #wind = Process(target=readwind, args=(q))
+        #dtn = datetime.now()
+        # print (dtn, " * start readwind ")
+        #wind.start()
+        readwind()
+
         mon.join()
         rec.join()
         spec.join()
+        #wind.join()
 
         cf = open (cmdfile,"r")
         cmd = int(cf.read())
@@ -462,8 +562,8 @@ def main():
 
         if dow != dtn.weekday():
             dow = dtn.weekday()
-            #import os
-            #os.system("clear")
+            import os
+            os.system("clear")
 
 
 
