@@ -25,6 +25,10 @@ Resistance Ohms<br>
 Quality Percent function of Resistance, and Relative Humidity)<br>
 VOCs PPM (Function of Quality)<br>
 
+Weather data
+Wind Direction
+Wind Speed
+
 Samson USB Microphone<br>
 Sound maximum dB<br>
 Freq at maximum dB Hz<br> 
