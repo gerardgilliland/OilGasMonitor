@@ -81,6 +81,9 @@ def SaveWind():
 
         if (windUnits == "mph"): # I am not lost in the file so save the data 
             print ("date:" + str(dtn) + " windDir:" + windDir + " windSpd:" + str(windSpd) + " windUnits:" + windUnits)
+            print ("The Weather Information is Copyright by TWC Product and Technology LLC.")
+            print ("I read it once each minute. You can only use it for personal, non-commercial use.")
+
         else:
             print ("I am lost in the file")
             
