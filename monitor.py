@@ -299,7 +299,7 @@ def savefile(prevfilename):
     # print(dtn, " * start saving ")
 
     if prevfilename > "":
-        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx)
+        srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
         srv.put(root + prevfilename)
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
@@ -337,13 +337,12 @@ def read_pm_line(_port):
 def monitor(q, rng, filename):
     global root
     global sensor
-    global windDir, windSpd
     dtn = datetime.now()
     sdtn = str(dtn)
     wait = (60 - dtn.second) / rng   # approx 5 seconds
 
     print(dtn, " * start monitoring ", " filename ", filename)
-    locArray = [0]*10 # will add two more under spectrum
+    locArray = [0]*8 # will add two more below and two more under spectrum
     # methane = [0.0]*4
     scns = [0.0]*4
     pms = [0.0]*3
@@ -385,8 +384,8 @@ def monitor(q, rng, filename):
             scns[i] += s[i]
 
         # print the values.
-        dtn = datetime.now()
-        # print(dtn, ' pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])))       
+        #dtn = datetime.now()
+        #print(dtn, ' pms:' + str(p[0]) + ", "  + str(p[1]) + ", " + str(p[2]) + " t:" + str(int(s[0])) + " p:" + str(int(s[1])) + " rh:" + str(int(s[2])) + " ohms:" + str(int(s[3])))       
 
     #for i in range(4):
     #    methane[i] = methane[i]/rng+0.5
@@ -405,25 +404,32 @@ def monitor(q, rng, filename):
     locArray[5]=int(scns[2]) # Rh * 100
     locArray[6]=int(scns[3]) # VOC Ohms
     locArray[7]=int(0) # int(methane[0]) # ppm -- will (hopefully) become smog
-    locArray[8]=int(windDir) # degrees
-    locArray[9]=int(windSpd) # mph
 
     fnam = open (root + filename,"w")
-    for i in range(10): # will append two more in spectrum
+    for i in range(8): # will append two more below and two more in spectrum
         sep = ","
         s = str(locArray[i]) + sep
         fnam.write(s)
 
     fnam.close()
 
+    fnam = open (root + "winddata.txt" ,"r")
+    s = fnam.read()
+    fnam.close()
+    fnam = open (root + filename, "a") 
+    fnam.write(s)
+    fnam.close()
+
     # print ("monitor locArray=", locArray)
     dtn = datetime.now()
     # print(dtn, " * done monitoring ")    
+
 # end monitor
 
-def readwind():
-    global windDir, windSpd
-    #time.sleep(25) # get the data appoximately half way into the minute
+
+def readwind(q, wait):
+
+    time.sleep(wait) # get the data appoximately half way into the minute
     url = requests.get("https://www.wunderground.com/personal-weather-station/dashboard?ID="+windLoc)
     data = url.text
     """  
@@ -473,6 +479,8 @@ def readwind():
         dtn = datetime.now()
         if (windUnits == "mph"): # I am not lost in the file so save the data 
             print (dtn, " * windDir:" + str(windDir) + " windSpd:" + str(windSpd) + " windUnits:" + windUnits)
+
+
         else:
             windDir = 0
             windSpd = 0
@@ -480,6 +488,12 @@ def readwind():
 
     url.close()
     data = ""
+
+    fnam = open (root + "winddata.txt" ,"w")
+    s = str(int(windDir)) + "," + str(int(windSpd)) + ","
+    fnam.write(s)
+    fnam.close()
+
 
 # end readwind
 
@@ -503,6 +517,7 @@ def main():
     filename = ""
     wavename = ""
     cameraname = ""
+
 
     while isRunning == cmd:
         prevfilename = filename
@@ -535,16 +550,17 @@ def main():
         # print (dtn, " * start spectrum ", " prevwavename ", prevwavename, " prevfilename ", prevfilename, " prevcameraname ", prevcameraname)
         spec.start()
 
-        #wind = Process(target=readwind, args=(q))
-        #dtn = datetime.now()
+        wind = Process(target=readwind, args=(q, 25))
+        dtn = datetime.now()
         # print (dtn, " * start readwind ")
-        #wind.start()
-        readwind()
+        wind.start()
+
 
         mon.join()
         rec.join()
         spec.join()
-        #wind.join()
+        wind.join()
+
 
         cf = open (cmdfile,"r")
         cmd = int(cf.read())
