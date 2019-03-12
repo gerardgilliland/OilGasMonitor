@@ -35,7 +35,8 @@ Freq at maximum dB Hz<br>
 
 Please see detail:<br>
 https://www.modelsw.com/OilGasMonitor/Define.php<br>
-
+The monitors data are stored on the server and warning and alarms set in<br>
+https://www.modelsw.com/OilGasMonitor/LoadMonitor.php<br>
 The monitors values are displayed on OilGasMap<br>
 https://www.modelsw.com/OilGasMonitor/OilGasMap.php<br>
 and PlotId<br>
