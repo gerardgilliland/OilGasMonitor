@@ -101,6 +101,14 @@ for i in range(p.get_device_count()):
 print ("\n\n")
 
 # get the wind location during startup
+windLoc = ""
+windDir = 0 # will be updated in readwind
+windSpd = 0 # will be updated in readwind
+fnam = open (root + "winddata.txt" ,"w")
+s = str(int(windDir)) + "," + str(int(windSpd)) + ","
+fnam.write(s)
+fnam.close()
+
 url = requests.get("https://www.modelsw.com/OilGasMonitor/GetWindLoc.php?Loc="+loc)
 data = url.text
 j = data.find("Loc:")
@@ -122,8 +130,6 @@ else:
 url.close()
 data = ""
 print ("Loc:" + loc + " WindLoc:" + windLoc)
-windDir = 0 # will be updated in readwind
-windSpd = 0 # will be updated in readwind
 
 
 def record(q, wavename, recordseconds):
@@ -428,6 +434,8 @@ def monitor(q, rng, filename):
 
 
 def readwind(q, wait):
+    if (windLoc == ""):
+        return
 
     time.sleep(wait) # get the data appoximately half way into the minute
     url = requests.get("https://www.wunderground.com/personal-weather-station/dashboard?ID="+windLoc)
@@ -480,7 +488,6 @@ def readwind(q, wait):
         if (windUnits == "mph"): # I am not lost in the file so save the data 
             print (dtn, " * windDir:" + str(windDir) + " windSpd:" + str(windSpd) + " windUnits:" + windUnits)
 
-
         else:
             windDir = 0
             windSpd = 0
@@ -493,7 +500,6 @@ def readwind(q, wait):
     s = str(int(windDir)) + "," + str(int(windSpd)) + ","
     fnam.write(s)
     fnam.close()
-
 
 # end readwind
 
@@ -517,7 +523,6 @@ def main():
     filename = ""
     wavename = ""
     cameraname = ""
-
 
     while isRunning == cmd:
         prevfilename = filename
@@ -554,7 +559,6 @@ def main():
         dtn = datetime.now()
         # print (dtn, " * start readwind ")
         wind.start()
-
 
         mon.join()
         rec.join()
