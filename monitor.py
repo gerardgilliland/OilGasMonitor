@@ -457,6 +457,10 @@ def readwind(q, wait):
     if (url != ""):
         dtn = datetime.now()
         j = data.find("windCompass")
+        if (j < 0):
+            print ("fail to read wind")
+            return
+
         j = data.find("transform:rotate(", j)
         l = len("transform:rotate(")
         j+=l
