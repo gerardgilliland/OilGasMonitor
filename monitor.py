@@ -484,7 +484,7 @@ def readwind(q, wait):
 
         if (windUnits == "mph"): # I am not lost in the file so save the data
             #print (" ")
-            print ("date:" + str(dtn) + " windSpd:" + str(windSpd) + " windUnits:" + windUnits + " windDir:" + str(windDir))
+            print (dtn + " * windSpd:" + str(windSpd) + " windUnits:" + windUnits + " windDir:" + str(windDir))
 
         else:
             windDir = 0
