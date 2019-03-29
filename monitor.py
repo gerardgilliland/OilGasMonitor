@@ -438,66 +438,59 @@ def readwind(q, wait):
         return
 
     time.sleep(wait) # get the data appoximately half way into the minute
-    url = requests.get("https://www.wunderground.com/personal-weather-station/dashboard?ID="+windLoc)
-    data = url.text
+    url = requests.get("https://www.wunderground.com/dashboard/pws/"+windLoc)
+    urldata = url.text
     """  
-      <div id="windCompass" class="wx-data" data-station="KCOBROOM140" data-variable="wind_dir_degrees" data-update-effect="wind-compass" style="transform:rotate(216deg);">
-      <div class="dial">
-      <div class="arrow-direction"></div>
-      </div>
-      </div>
-      <div id="windCompassSpeed" class="wx-data" data-station="KCOBROOM140" data-variable="wind_speed">
-      <h4><span class="wx-value">
-      2.7
-      </span>
-      </h4>
-      mph
-      </div>
-     """
-    if (url != ""):
+    class="wind-dial" src="https://s.w-x.co/wu/assets/static/images/pws/Wind-Dial.svg">
+    class="big" style="font-size:   
+    ;">             
+    7
+    </span>
+    <span _ngcontent-c7="" class="small">
+    mph
+    </span></div>
+    <div _ngcontent-c7="" 
+    class="arrow-wrapper" style="transform: translateX(-50%) 
+    rotate(287deg);">
+    """
+    if (urldata != ""):
         dtn = datetime.now()
-        j = data.find("windCompass")
-        if (j < 0):
-            print ("fail to read wind")
-            return
-
-        j = data.find("transform:rotate(", j)
-        l = len("transform:rotate(")
-        j+=l
-        k = data.find("deg);", j)
-        windDir = data[j:k]
-        windDir = int(windDir)
-
-        j = data.find("windCompassSpeed", k)
-        j = data.find("wind_speed", j)
-        j = data.find("wx-value", j)
-        l = len("wx-value")+2
-        j+=l
+        j = urldata.find('class="wind-dial"') # this is unique in the file
+        data = urldata[j:j+500]
+        url.close()
+        urldata = ""
+        #print (data)
+        j = data.find('class="big" style="font-size:') # this line varies after font-size: 
+        j = data.find(';">') # but they both end with this
+        l = len(';">')   # should be 3
+        j +=l
         k = data.find("</span>", j)
         windSpd = data[j:k]
-        windSpd = windSpd.replace("\n", "")
-        windSpd = windSpd.strip()
-        windSpd = float(windSpd)
-        windSpd = int(windSpd * 10)
         
-        j = data.find("</h4>", k)
-        l = len("</h4>")
-        j+=l
-        k = data.find("</div>", j)
+        j = data.find('class="small">', j)
+        l = len('class="small">')
+        j +=l
+        k = data.find("</span>", j)
         windUnits = data[j:k]
-        windUnits = windUnits.replace("\n", "")
-        windUnits = windUnits.strip()
-        
-        dtn = datetime.now()
-        if (windUnits == "mph"): # I am not lost in the file so save the data 
-            print (dtn, " * windDir:" + str(windDir) + " windSpd:" + str(windSpd) + " windUnits:" + windUnits)
+
+        j = data.find('class="arrow-wrapper"', j)
+        j = data.find('rotate(', j)
+        l = len('rotate(')
+        j +=l
+        k = data.find('deg);', j)
+        windDir = data[j:k]
+        windDir = int(windDir)
+        windDir -= 180
+
+        if (windUnits == "mph"): # I am not lost in the file so save the data
+            #print (" ")
+            print ("date:" + str(dtn) + " windSpd:" + str(windSpd) + " windUnits:" + windUnits + " windDir:" + str(windDir))
 
         else:
             windDir = 0
             windSpd = 0
             print (dtn, " I am lost in the wind file. ")
 
-    url.close()
     data = ""
 
     fnam = open (root + "winddata.txt" ,"w")
