@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # WindLocTest.py
+# version 3
 
 import requests
 from datetime import datetime
@@ -37,60 +38,53 @@ print ("Loc:" + loc + " WindLoc:" + windLoc)
 
 
 def readwind():
-    #url = requests.get("https://www.wunderground.com/dashboard/pws/"+windLoc+"?cm_ven=localwx_pwsdash")
-    url = requests.get("https://www.wunderground.com/dashboard/pws/"+windLoc)
+    # https://www.wunderground.com/weather/us/co/broomfield/KCOBROOM140
+    # works with different cities but needs a city i.e. co/erie/KCOB..., co/northglen/KCOB ... 
+    # error if us/co/KCO...
+    url = requests.get("https://www.wunderground.com/weather/us/co/broomfield/"+windLoc)
     urldata = url.text
     """  
-    class="wind-dial" src="https://s.w-x.co/wu/assets/static/images/pws/Wind-Dial.svg">
-    class="big" style="font-size:   
-    ;">             
-    7
-    </span>
-    <span _ngcontent-c7="" class="small">
-    mph
-    </span></div>
-    <div _ngcontent-c7="" 
-    class="arrow-wrapper" style="transform: translateX(-50%) 
-    rotate(287deg);">
+        class="wind-compass" style="transform:rotate(184deg);">
+        <div _ngcontent-c21="" class="dial">
+        <div _ngcontent-c21="" class="arrow-direction"></div>
+         </div>
+        </div>
+        <div _ngcontent-c21="" class="wind-north">N</div>
+        <div _ngcontent-c21="" class="wind-speed">
+        <strong _ngcontent-c21="">0</strong>
+        </div>       
     """
+    k = -1
     if (urldata != ""):
         dtn = datetime.now()
-        j = urldata.find('class="wind-dial"') # this is unique in the file
+        j = urldata.find('class="wind-compass"') # this is unique in the file
         data = urldata[j:j+500]
         url.close()
         urldata = ""
         #print (data)
-        j = data.find('class="big" style="font-size:') # this line varies after font-size: 
-        j = data.find(';">') # but they both end with this
-        l = len(';">')   # should be 3
+        j = data.find('transform:rotate(') 
+        l = len('transform:rotate(') 
         j +=l
-        k = data.find("</span>", j)
-        windSpd = data[j:k]
-        
-        j = data.find('class="small">', j)
-        l = len('class="small">')
-        j +=l
-        k = data.find("</span>", j)
-        windUnits = data[j:k]
-
-        j = data.find('class="arrow-wrapper"', j)
-        j = data.find('rotate(', j)
-        l = len('rotate(')
-        j +=l
-        k = data.find('deg);', j)
+        k = data.find('deg);', j)        
         windDir = data[j:k]
-        windDir = int(windDir)
-        windDir -= 180
+        if (k > 1): # I am not lost in the file so continue
+            j = data.find('class="wind-speed"', k)
+            j = data.find('<strong _ngcontent', j)
+            j = data.find('="">', j)
+            l = len('="">')
+            j +=l
+            k = data.find('</strong>', j)
+            windSpd = data[j:k]
+            if (k > 1): # I am not lost in the file so continue
+                #print (" ")
+                print (dtn, " * windSpd:" + str(windSpd) + " windDir:" + str(windDir))
 
-        if (windUnits == "mph"): # I am not lost in the file so save the data
-            #print (" ")
-            print ("date:" + str(dtn) + " windSpd:" + str(windSpd) + " windUnits:" + windUnits + " windDir:" + str(windDir))
-            print ("The Weather Information is Copyright by TWC Product and Technology LLC.")
-            print ("I read it once each minute. You can only use it for personal, non-commercial use.")
-        else:
-            print ("I am lost in the wind file")
-        data = ""
+    if (k < 1):
+        windDir = 0
+        windSpd = 0
+        print ("I am lost in the wind file")
+
+    data = ""
     
 
 readwind()
-    
