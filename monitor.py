@@ -3,6 +3,7 @@
 
 # 2019-04-12 -- Wind Version 3
 # 2019-04-22 -- A.4 Separate folders for Images and Sound. SFTP all files to server
+# 2019-04-22 -- A.6 Auto reboot on failure to transfer files to server
 # Monitor Oil and Gas 
 """
 Inputs:
@@ -50,11 +51,11 @@ monlog = "/home/pi/Desktop/monitor.log"
 fmt="%(asctime)s %(message)s"
 logging.basicConfig(filename=monlog, level=logging.WARN, format=fmt)
 
-# adc = Adafruit_ADS1x15.ADS1115()
-# GAIN = 1 # set to 1
 # change location from xx to your location number
 Location = xx
 loc = str(Location)
+cmd = 1
+cmdfile = "/home/pi/cmdfile.txt"
 port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=2.0)
 root = "/home/pi/OilGasMonitor/Scan/"
 sound = "/home/pi/OilGasMonitor/Sound/"
@@ -307,6 +308,9 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 def savefile(prevfilename):
     global root
 
+    cf = open (cmdfile,"r")
+    cmd = int(cf.read())
+    cf.close
     # dtn = datetime.now()
     # print(dtn, " * start saving ")
 
@@ -314,7 +318,6 @@ def savefile(prevfilename):
         srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
 
         local = os.listdir(root)
-
         for j in local:
             srv.put(root + j)
 
@@ -327,7 +330,7 @@ def savefile(prevfilename):
         # prints out the directories and files, line by line
         for i in remote:
             for j in local:
-                if i == j:
+                if i == j and cmd == 1: # if the cmd == 3 it will simulate a WiFi failure
                     # print ("delete local file: " + j)
                     os.remove(root + j)
                     break
@@ -511,7 +514,8 @@ def readwind(q, wait):
 
 def main():
     # Main loop.
-    cmdfile = "/home/pi/cmdfile.txt"
+    import os
+    # cmdfile = "/home/pi/cmdfile.txt"
     cf = open (cmdfile,"w")
     cmd = 1
     cf.write (str(cmd))
@@ -570,24 +574,42 @@ def main():
         spec.join()
         wind.join()
 
-
         cf = open (cmdfile,"r")
         cmd = int(cf.read())
         cf.close
-        if isRunning != cmd:
-            print ("check interrupt")
-            if cmd < 0:
-                import os
+
+        # reboot if the files are not being transferred
+        # specifically 5 files -- 5 minutes -- just try it once
+        # if they don't transfer then the one added here will be number 6 so we won't reboot again
+        local = os.listdir(root)
+        cntr = len(local)
+        if cntr == 5:
+            fnamloc = "fileRebooted_" + loc + ".txt"
+            fnam = open (root + fnamloc , "w") 
+            s = str(dtn) + "\n"
+            s += "error codes here" + "\n" 
+            fnam.write(s)
+            fnam.close()
+            cmd = 0
+
+        if isRunning != cmd: # 1 = run
+            print ("check interrupt") 
+            if cmd == -1:
+                print ("cmd -1 = shutdown")
                 os.system("sudo shutdown -h now")
             elif cmd == 0:
-                import os
-                os.system("sudo reboot -h now")
-            else: # incremented
+                print ("cmd 0 = reboot")
+                os.system("sudo reboot -h now")                
+            elif cmd == 2:
+                print ("cmd 2 = exit")
                 exit()
-
+            elif cmd == 3:
+                print ("cmd 3 = test WiFi failure")
+                isRunning = cmd
+            else: # unknown
+                print ("cmd " + str(cmd) + "unknown")
         if dow != dtn.weekday():
             dow = dtn.weekday()
-            import os
             os.system("clear")
 
 
