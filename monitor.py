@@ -2,6 +2,7 @@
 # monitor.py
 
 # 2019-04-12 -- Wind Version 3
+# 2019-04-22 -- A.4 Separate folders for Images and Sound. SFTP all files to server
 # Monitor Oil and Gas 
 """
 Inputs:
@@ -56,6 +57,8 @@ Location = xx
 loc = str(Location)
 port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=2.0)
 root = "/home/pi/OilGasMonitor/Scan/"
+sound = "/home/pi/OilGasMonitor/Sound/"
+image = "/home/pi/OilGasMonitor/Image/"
 savedb = -120
 sensor = bme680.BME680()
 
@@ -105,7 +108,7 @@ print ("\n\n")
 windLoc = ""
 windDir = 0 # will be updated in readwind
 windSpd = 0 # will be updated in readwind
-fnam = open (root + "winddata.txt" ,"w")
+fnam = open ("/home/pi/winddata.txt" ,"w")
 s = str(int(windDir)) + "," + str(int(windSpd)) + ","
 fnam.write(s)
 fnam.close()
@@ -155,7 +158,7 @@ def record(q, wavename, recordseconds):
     stream.stop_stream()
     stream.close()
     mic.terminate()
-    wf = wave.open(root + wavename, 'wb')
+    wf = wave.open(sound + wavename, 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(mic.get_sample_size(FORMAT))
     wf.setframerate(RATE)
@@ -219,6 +222,8 @@ def dbfft(x, fs, win=None, ref=32768):
 def spectrum(q, prevwavename, prevfilename, prevcameraname):
     global savedb
     global root
+    global sound
+    global image
 
     if prevwavename == "":
         print ("prevwavenmame is null")
@@ -228,7 +233,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         print(dtn, " * start analyzing ", " prevwavename ", prevwavename)
 
         # Load the file
-        fs, signal = wf.read(root + prevwavename)
+        fs, signal = wf.read(sound + prevwavename)
         # Take slice
         N = 32768
         win = np.hamming(N)
@@ -254,7 +259,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 
         # if a low maxdb then delete the wave file else save it for off line analysis
         if maxdb < dblimit:
-            os.remove(root + prevwavename)
+            os.remove(sound + prevwavename)
 
         else:
             camera = PiCamera()
@@ -264,7 +269,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
             camera.brightness = 50 # I haven't messed with this
             sdtn = str(dtn)
             camera.annotate_text = sdtn[:16]
-            camera.capture(root + prevcameraname)
+            camera.capture(image + prevcameraname)
             camera.stop_preview()
             camera.close()
 
@@ -302,28 +307,37 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 def savefile(prevfilename):
     global root
 
-    dtn = datetime.now()
+    # dtn = datetime.now()
     # print(dtn, " * start saving ")
 
     if prevfilename > "":
         srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
-        srv.put(root + prevfilename)
+
+        local = os.listdir(root)
+
+        for j in local:
+            srv.put(root + j)
+
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
-        data = srv.listdir()
+        remote = srv.listdir()
         # Closes the connection
         srv.close()
 
         # prints out the directories and files, line by line
-        #for i in data:
-        #    print (i)  
-        #    if (i == prevfilename):
-        #        os.remove(root + prevfilename)
-        os.remove(root + prevfilename)
+        for i in remote:
+            for j in local:
+                if i == j:
+                    # print ("delete local file: " + j)
+                    os.remove(root + j)
+                    break
 
-    dtn = datetime.now()
-    print(dtn, " * done transfering ", " prevfilename ", prevfilename)
-    prevfilename = ""
+        remote = ""
+        local = ""
+
+        dtn = datetime.now()
+        print(dtn, " * done transfering ", " prevfilename ", prevfilename)
+        prevfilename = ""
 
 # end savefile
 
@@ -420,7 +434,7 @@ def monitor(q, rng, filename):
 
     fnam.close()
 
-    fnam = open (root + "winddata.txt" ,"r")
+    fnam = open ("/home/pi/winddata.txt" ,"r")
     s = fnam.read()
     fnam.close()
     fnam = open (root + filename, "a") 
@@ -478,7 +492,7 @@ def readwind(q, wait):
             windSpd = data[j:k]
             if (k > 1): # I am not lost in the file so continue
                 #print (" ")
-                print (dtn, " * windSpd:" + str(windSpd) + " windDir:" + str(windDir))
+                print (dtn, " * windDir:" + str(windDir) + " windSpd:" + str(windSpd))
 
     data = ""
 
@@ -487,7 +501,7 @@ def readwind(q, wait):
         windSpd = 0
         print ("I am lost in the wind file")
 
-    fnam = open (root + "winddata.txt" ,"w")
+    fnam = open ("/home/pi/winddata.txt" ,"w")
     s = str(int(windDir)) + "," + str(int(windSpd)) + ","
     fnam.write(s)
     fnam.close()
