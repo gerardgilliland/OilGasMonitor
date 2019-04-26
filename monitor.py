@@ -4,6 +4,7 @@
 # 2019-04-12 -- Wind Version 3
 # 2019-04-22 -- A.4 Separate folders for Images and Sound. SFTP all files to server
 # 2019-04-22 -- A.6 Auto reboot on failure to transfer files to server
+# 2019-04-25 -- A.7 Save filename local then move to Scan folder
 # Monitor Oil and Gas 
 """
 Inputs:
@@ -274,10 +275,12 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
             camera.stop_preview()
             camera.close()
 
-        fnam = open (root + prevfilename,"a") 
+        fnam = open ("/home/pi/" + prevfilename,"a") 
         s = str(int(maxdb)) + "," + str(int(freqmxdb)) + "\n"
         fnam.write(s)
         fnam.close()
+        # move the completed file to the Scan folder
+        os.rename("/home/pi/" + prevfilename, root + prevfilename)
         dtn = datetime.now()
         print(dtn, " * save db and freq: ", " prevfilename ", prevfilename)
 
@@ -311,10 +314,10 @@ def savefile(prevfilename):
     cf = open (cmdfile,"r")
     cmd = int(cf.read())
     cf.close
-    # dtn = datetime.now()
-    # print(dtn, " * start saving ")
+    dtn = datetime.now()
+    print(dtn, " * start saving ")
 
-    if prevfilename > "":
+    if prevfilename > "" and cmd == 1: # if the cmd == 3 it will simulate a WiFi failure
         srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
 
         local = os.listdir(root)
@@ -330,7 +333,7 @@ def savefile(prevfilename):
         # prints out the directories and files, line by line
         for i in remote:
             for j in local:
-                if i == j and cmd == 1: # if the cmd == 3 it will simulate a WiFi failure
+                if i == j:
                     # print ("delete local file: " + j)
                     os.remove(root + j)
                     break
@@ -340,7 +343,8 @@ def savefile(prevfilename):
 
         dtn = datetime.now()
         print(dtn, " * done transfering ", " prevfilename ", prevfilename)
-        prevfilename = ""
+
+    prevfilename = ""
 
 # end savefile
 
@@ -362,7 +366,6 @@ def monitor(q, rng, filename):
     global root
     global sensor
     dtn = datetime.now()
-    sdtn = str(dtn)
     wait = (60 - dtn.second) / rng   # approx 5 seconds
 
     print(dtn, " * start monitoring ", " filename ", filename)
@@ -429,7 +432,7 @@ def monitor(q, rng, filename):
     locArray[6]=int(scns[3]) # VOC Ohms
     locArray[7]=int(0) # int(methane[0]) # ppm -- will (hopefully) become smog
 
-    fnam = open (root + filename,"w")
+    fnam = open ("/home/pi/" + filename,"w")
     for i in range(8): # will append two more below and two more in spectrum
         sep = ","
         s = str(locArray[i]) + sep
@@ -440,13 +443,13 @@ def monitor(q, rng, filename):
     fnam = open ("/home/pi/winddata.txt" ,"r")
     s = fnam.read()
     fnam.close()
-    fnam = open (root + filename, "a") 
+    fnam = open ("/home/pi/" + filename, "a") 
     fnam.write(s)
     fnam.close()
 
     # print ("monitor locArray=", locArray)
     dtn = datetime.now()
-    # print(dtn, " * done monitoring ")    
+    print(dtn, " * done monitoring ", " filename ", filename)
 
 # end monitor
 
@@ -516,19 +519,18 @@ def main():
     # Main loop.
     import os
     # cmdfile = "/home/pi/cmdfile.txt"
-    cf = open (cmdfile,"w")
-    cmd = 1
-    cf.write (str(cmd))
-    cf.close
-    isRunning = cmd
-
     dtn = datetime.now()
     dow = dtn.weekday()
     print (dtn, " mainloop ", "weekday", dow)
     wait = 60 - dtn.second
     print ("wait:" + str(wait))
     time.sleep(wait)
-    print (" isRunning")
+    print ("isRunning")
+    cf = open (cmdfile,"w")
+    cmd = 1
+    cf.write (str(cmd))
+    cf.close
+    isRunning = cmd
     filename = ""
     wavename = ""
     cameraname = ""
@@ -537,9 +539,9 @@ def main():
         prevfilename = filename
         prevwavename = wavename
         prevcameraname = cameraname
+        rng = 12
 
         dtn = datetime.now()
-        rng = 12
         sdtn = str(dtn)
         #basename = sdtn[:16] + "_" + loc   # was 2018-05-17 02:21_1  colon won't transfer to windows os
         basename = sdtn[:13] + "_" + sdtn[14:16] + "_" + loc    # now 2018-05-17 02_21_1
@@ -584,10 +586,12 @@ def main():
         local = os.listdir(root)
         cntr = len(local)
         if cntr == 5:
-            fnamloc = "fileRebooted_" + loc + ".txt"
+            time.sleep(1) # maybe this will let the sound get saved in the last file
+            fnamloc = "fileRebooting_" + loc + ".txt"
             fnam = open (root + fnamloc , "w") 
-            s = str(dtn) + "\n"
-            s += "error codes here" + "\n" 
+            dtn = datetime.now()
+            s = str(dtn) + '\n'
+            s += "error codes here" + '\n'
             fnam.write(s)
             fnam.close()
             cmd = 0
