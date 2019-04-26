@@ -5,6 +5,7 @@
 # 2019-04-22 -- A.4 Separate folders for Images and Sound. SFTP all files to server
 # 2019-04-22 -- A.6 Auto reboot on failure to transfer files to server
 # 2019-04-25 -- A.7 Save filename local then move to Scan folder
+# 2019-04-26 -- B.1 Change file date to use python strftime() instead of str()
 # Monitor Oil and Gas 
 """
 Inputs:
@@ -518,37 +519,36 @@ def readwind(q, wait):
 def main():
     # Main loop.
     import os
-    # cmdfile = "/home/pi/cmdfile.txt"
-    dtn = datetime.now()
-    dow = dtn.weekday()
-    print (dtn, " mainloop ", "weekday", dow)
-    wait = 60 - dtn.second
-    print ("wait:" + str(wait))
-    time.sleep(wait)
-    print ("isRunning")
+
+    filename = ""
+    wavename = ""
+    cameraname = ""
     cf = open (cmdfile,"w")
     cmd = 1
     cf.write (str(cmd))
     cf.close
     isRunning = cmd
-    filename = ""
-    wavename = ""
-    cameraname = ""
+    dtn = datetime.now()
+    dow = dtn.weekday()
+    print (dtn, " mainloop ", "weekday", dow)
+    wait = int(60 - dtn.second)
+    print ("wait:" + str(wait))
+    time.sleep(wait)
+    dtn = datetime.now()
+    print (dtn, " isRunning")
 
     while isRunning == cmd:
+        dtn = datetime.now()
+        basename = dtn.strftime("%Y-%m-%d %H_%M") + "_" + loc    # 2018-05-17 02_21_1
+        print (dtn, "basename: " + basename)
         prevfilename = filename
         prevwavename = wavename
         prevcameraname = cameraname
-        rng = 12
-
-        dtn = datetime.now()
-        sdtn = str(dtn)
-        #basename = sdtn[:16] + "_" + loc   # was 2018-05-17 02:21_1  colon won't transfer to windows os
-        basename = sdtn[:13] + "_" + sdtn[14:16] + "_" + loc    # now 2018-05-17 02_21_1
         filename = basename + ".txt"
         wavename = basename + ".wav"
         cameraname = basename + ".png"
         recordseconds = 60 - dtn.second
+        rng = 12
 
         q = Queue()
         mon = Process (target=monitor, args=(q, rng, filename))
