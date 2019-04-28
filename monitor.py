@@ -6,6 +6,7 @@
 # 2019-04-22 -- A.6 Auto reboot on failure to transfer files to server
 # 2019-04-25 -- A.7 Save filename local then move to Scan folder
 # 2019-04-26 -- B.1 Change file date to use python strftime() instead of str()
+# 2019-04-26 -- D.1 Add sleep in loop as workaround for time.sleep(wait) 
 # Monitor Oil and Gas 
 """
 Inputs:
@@ -65,7 +66,8 @@ image = "/home/pi/OilGasMonitor/Image/"
 savedb = -120
 sensor = bme680.BME680()
 
-print("Calibration data for BME680:")
+dtn = datetime.now()
+print(dtn, "Calibration data for BME680:")
 for name in dir(sensor.calibration_data):
 
     if not name.startswith('_'):
@@ -84,7 +86,8 @@ sensor.set_temperature_oversample(bme680.OS_8X)
 sensor.set_filter(bme680.FILTER_SIZE_3)
 sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
-print("\n\nInitial reading BME680:")
+dtn = datetime.now()
+print(dtn, "\n\nInitial reading BME680:")
 for name in dir(sensor.data):
     value = getattr(sensor.data, name)
 
@@ -100,7 +103,8 @@ sensor.select_gas_heater_profile(0)
 # sensor.set_gas_heater_profile(200, 150, nb_profile=1)
 # sensor.select_gas_heater_profile(1)
 
-print ("\n\nMatch the input_device_index in record() with your mic:")
+dtn = datetime.now()
+print (dtn, "\n\nMatch the input_device_index in record() with your mic:")
 p = pyaudio.PyAudio()
 for i in range(p.get_device_count()):
     dev = p.get_device_info_by_index(i)
@@ -108,6 +112,8 @@ for i in range(p.get_device_count()):
 print ("\n\n")
 
 # get the wind location during startup
+dtn = datetime.now()
+print (dtn, "\n\nGet the wind location during startup")
 windLoc = ""
 windDir = 0 # will be updated in readwind
 windSpd = 0 # will be updated in readwind
@@ -136,7 +142,7 @@ else:
    
 url.close()
 data = ""
-print ("Loc:" + loc + " WindLoc:" + windLoc)
+print ("Loc:" + loc + " WindLoc:" + windLoc + "\n\n")
 
 
 def record(q, wavename, recordseconds):
@@ -519,7 +525,6 @@ def readwind(q, wait):
 def main():
     # Main loop.
     import os
-
     filename = ""
     wavename = ""
     cameraname = ""
@@ -530,10 +535,12 @@ def main():
     isRunning = cmd
     dtn = datetime.now()
     dow = dtn.weekday()
-    print (dtn, " mainloop ", "weekday", dow)
-    wait = int(60 - dtn.second)
-    print ("wait:" + str(wait))
-    time.sleep(wait)
+    print (dtn, " mainloop", "weekday", dow)
+    while dtn.second > 0:
+        time.sleep(.5)
+        dtn = datetime.now()
+        #print (dtn, "waiting")
+
     dtn = datetime.now()
     print (dtn, " isRunning")
 
@@ -612,6 +619,8 @@ def main():
                 isRunning = cmd
             else: # unknown
                 print ("cmd " + str(cmd) + "unknown")
+                isRunning = cmd
+
         if dow != dtn.weekday():
             dow = dtn.weekday()
             os.system("clear")
