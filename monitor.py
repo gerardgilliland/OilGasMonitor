@@ -7,6 +7,8 @@
 # 2019-04-25 -- A.7 Save filename local then move to Scan folder
 # 2019-04-26 -- B.1 Change file date to use python strftime() instead of str()
 # 2019-04-26 -- D.1 Add sleep in loop as workaround for time.sleep(wait) 
+# 2019-04-26 -- E.1 Improve WiFiBoot file name and status
+
 # Monitor Oil and Gas 
 """
 Inputs:
@@ -539,7 +541,7 @@ def main():
     while dtn.second > 0:
         time.sleep(.5)
         dtn = datetime.now()
-        #print (dtn, "waiting")
+        print (dtn, "waiting")
 
     dtn = datetime.now()
     print (dtn, " isRunning")
@@ -592,13 +594,16 @@ def main():
         # if they don't transfer then the one added here will be number 6 so we won't reboot again
         local = os.listdir(root)
         cntr = len(local)
-        if cntr == 5:
-            time.sleep(1) # maybe this will let the sound get saved in the last file
-            fnamloc = "fileRebooting_" + loc + ".txt"
-            fnam = open (root + fnamloc , "w") 
+        if cntr == 5:            
+            fnamloc = "WiFiBoot" + basename + ".txt"
+            fnam = open (root + fnamloc, "w") 
             dtn = datetime.now()
             s = str(dtn) + '\n'
-            s += "error codes here" + '\n'
+            s += "cmd: " + str(cmd) + '\n'
+            s += "Record Count: " + str(cntr) + '\n'
+            for j in local:
+                s += j + '\n'
+
             fnam.write(s)
             fnam.close()
             cmd = 0
