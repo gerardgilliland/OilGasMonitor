@@ -8,6 +8,8 @@
 # 2019-04-26 -- B.1 Change file date to use python strftime() instead of str()
 # 2019-04-26 -- D.1 Add sleep in loop as workaround for time.sleep(wait) 
 # 2019-04-26 -- E.1 Improve WiFiBoot file name and status
+# 2019-05-18 -- J.1 Add ActiveLoc to selectively start LoadMonitor
+
 
 # Monitor Oil and Gas 
 """
@@ -61,6 +63,7 @@ Location = xx
 loc = str(Location)
 cmd = 1
 cmdfile = "/home/pi/cmdfile.txt"
+activeLoc = 1
 port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=2.0)
 root = "/home/pi/OilGasMonitor/Scan/"
 sound = "/home/pi/OilGasMonitor/Sound/"
@@ -161,6 +164,7 @@ def record(q, wavename, recordseconds):
             frames_per_buffer=CHUNK,
             input_device_index = 2,
             input = True)
+
     frames = []
     for i in range(0, int(RATE / CHUNK * recordseconds)):
         data = stream.read(CHUNK)
@@ -235,6 +239,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
     global root
     global sound
     global image
+    global activeLoc
 
     if prevwavename == "":
         print ("prevwavenmame is null")
@@ -302,12 +307,16 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
         x = savefile(prevfilename)
         prevwavename = ""
 
-        if Location == 1:
+        cf = open (cmdfile,"r")
+        cmd = int(cf.read())
+        cf.close
+
+        if Location == activeLoc and cmd == 1:
             dtn = datetime.now()
             print(dtn, " * sleep 7 ")
             time.sleep(7)
             dtn = datetime.now()
-            print(dtn, " * run LoadMonitor.php ")
+            print(dtn, " * activeLoc:" + str(activeLoc) + " run LoadMonitor.php ")
             import requests
             r = requests.get('https://www.modelsw.com/OilGasMonitor/LoadMonitor.php')
             dtn = datetime.now()
@@ -319,6 +328,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 
 def savefile(prevfilename):
     global root
+    global activeLoc
 
     cf = open (cmdfile,"r")
     cmd = int(cf.read())
@@ -326,29 +336,47 @@ def savefile(prevfilename):
     dtn = datetime.now()
     print(dtn, " * start saving ")
 
-    if prevfilename > "" and cmd == 1: # if the cmd == 3 it will simulate a WiFi failure
+    if prevfilename > "" and cmd == 1:
+        # replace xx with your location (2 places) and yourlogin with the login you use to log into modelsw.com
         srv = pysftp.Connection(host="home208845805.1and1-data.host", username="u45596567-OilGas-xx", password="yourlogin_Mxx")
 
         local = os.listdir(root)
         for j in local:
             srv.put(root + j)
-
+        
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
         remote = srv.listdir()
+        srv.get("zActiveLocFile.txt")
         # Closes the connection
         srv.close()
 
+        af = open ("zActiveLocFile.txt","r")
+        slocations = af.read()
+        af.close
+        locations = slocations.split(",")
+        activeLoc = int(locations[0])
+        nextLoc = int(locations[1])
+        maxLoc = int(locations[2]) * 2
+
         # prints out the directories and files, line by line
+        cntr = 0
         for i in remote:
+            if i[:1] < "z":
+                cntr = cntr + 1
+
             for j in local:
                 if i == j:
                     # print ("delete local file: " + j)
                     os.remove(root + j)
                     break
-
+        
         remote = ""
         local = ""
+        
+        if cntr > maxLoc:  # if the LoadMonitor has not been loading files
+            if Location == nextLoc:  # if I will be loading next time
+                activeLoc = nextLoc  # run LoadMonitor
 
         dtn = datetime.now()
         print(dtn, " * done transfering ", " prevfilename ", prevfilename)
