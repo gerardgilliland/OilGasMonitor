@@ -9,7 +9,7 @@
 # 2019-04-26 -- D.1 Add sleep in loop as workaround for time.sleep(wait) 
 # 2019-04-26 -- E.1 Improve WiFiBoot file name and status
 # 2019-05-18 -- J.1 Add ActiveLoc to selectively start LoadMonitor
-
+# 2019-07-02 -- N.1 Reboot on a connection error
 
 # Monitor Oil and Gas 
 """
