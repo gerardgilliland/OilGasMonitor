@@ -70,6 +70,7 @@ sound = "/home/pi/OilGasMonitor/Sound/"
 image = "/home/pi/OilGasMonitor/Image/"
 savedb = -120
 sensor = bme680.BME680()
+requestcntr = 0
 
 dtn = datetime.now()
 print(dtn, "Calibration data for BME680:")
@@ -318,10 +319,28 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
             dtn = datetime.now()
             print(dtn, " * activeLoc:" + str(activeLoc) + " run LoadMonitor.php ")
             import requests
-            r = requests.get('https://www.modelsw.com/OilGasMonitor/LoadMonitor.php')
-            dtn = datetime.now()
-            # r = 200 -- the server successfully answered the http request  
-            print(dtn, " * done LoadMonitor.php status:", str(r))
+            try:
+                r = requests.get('https://www.modelsw.com/OilGasMonitor/LoadMonitor.php')
+                dtn = datetime.now()
+                # r = 200 -- the server successfully answered the http request  
+                print(dtn, " * done LoadMonitor.php status:", str(r))
+                if (r == 200):
+                    requestcntr = 0  
+            except:
+                requestcntr = requestcntr + 1
+                if requestcntr == 4:
+                    cmd = 4
+                    print("request:" + str(r))
+                    fnamloc = "ConnectLoad" + basename + ".txt"
+                    fnam = open (root + fnamloc, "w") 
+                    dtn = datetime.now()
+                    s = str(dtn) + '\n'
+                    s += "request: " + str(r) + '\n'
+                    s += "OSError: " + str(e.errno) + '\n'
+                    s += "error: " + str(e) + '\n'
+                    s += "cmd: 4" + '\n'
+                    fnam.write(s)
+                    fnam.close()
 
 #end spectrum
 
@@ -364,6 +383,8 @@ def savefile(prevfilename):
         for i in remote:
             if i[:1] < "z":
                 cntr = cntr + 1
+            #else:  # remove the z from the front of the file name.
+            #    i = i[1:]
 
             for j in local:
                 if i == j:
@@ -499,50 +520,68 @@ def readwind(q, wait):
     # https://www.wunderground.com/weather/us/co/broomfield/KCOBROOM140
     # works with different cities but needs a city i.e. co/erie/KCOB..., co/northglen/KCOB ... 
     # error if us/co/KCO...
-    url = requests.get("https://www.wunderground.com/weather/us/co/broomfield/"+windLoc)
-    urldata = url.text
-    """  
-        class="wind-compass" style="transform:rotate(184deg);">
-        <div _ngcontent-c21="" class="dial">
-        <div _ngcontent-c21="" class="arrow-direction"></div>
-         </div>
-        </div>
-        <div _ngcontent-c21="" class="wind-north">N</div>
-        <div _ngcontent-c21="" class="wind-speed">
-        <strong _ngcontent-c21="">0</strong>
-        </div>       
-    """
-    k = -1
-    if (urldata != ""):
-        dtn = datetime.now()
-        j = urldata.find('class="wind-compass"') # this is unique in the file
-        data = urldata[j:j+500]
-        url.close()
-        urldata = ""
-        #print (data)
-        j = data.find('transform:rotate(') 
-        l = len('transform:rotate(') 
-        j +=l
-        k = data.find('deg);', j)        
-        windDir = data[j:k]
-        if (k > 1): # I am not lost in the file so continue
-            j = data.find('class="wind-speed"', k)
-            j = data.find('<strong _ngcontent', j)
-            j = data.find('="">', j)
-            l = len('="">')
+    try:
+        url = requests.get("https://www.wunderground.com/weather/us/co/broomfield/"+windLoc)
+        urldata = url.text
+        """  
+            class="wind-compass" style="transform:rotate(184deg);">
+            <div _ngcontent-c21="" class="dial">
+            <div _ngcontent-c21="" class="arrow-direction"></div>
+            </div>
+            </div>
+            <div _ngcontent-c21="" class="wind-north">N</div>
+            <div _ngcontent-c21="" class="wind-speed">
+            <strong _ngcontent-c21="">0</strong>
+            </div>       
+        """
+        k = -1
+        if (urldata != ""):
+            requestcntr = 0
+            dtn = datetime.now()
+            j = urldata.find('class="wind-compass"') # this is unique in the file
+            data = urldata[j:j+500]
+            url.close()
+            urldata = ""
+            #print (data)
+            j = data.find('transform:rotate(') 
+            l = len('transform:rotate(') 
             j +=l
-            k = data.find('</strong>', j)
-            windSpd = data[j:k]
+            k = data.find('deg);', j)        
+            windDir = data[j:k]
             if (k > 1): # I am not lost in the file so continue
-                #print (" ")
-                print (dtn, " * windDir:" + str(windDir) + " windSpd:" + str(windSpd))
+                j = data.find('class="wind-speed"', k)
+                j = data.find('<strong _ngcontent', j)
+                j = data.find('="">', j)
+                l = len('="">')
+                j +=l
+                k = data.find('</strong>', j)
+                windSpd = data[j:k]
+                if (k > 1): # I am not lost in the file so continue
+                    #print (" ")
+                    print (dtn, " * windDir:" + str(windDir) + " windSpd:" + str(windSpd))
 
-    data = ""
+        data = ""
 
-    if (k < 1):
-        windDir = 0
-        windSpd = 0
-        print ("I am lost in the wind file")
+        if (k < 1):
+            windDir = 0
+            windSpd = 0
+            print ("I am lost in the wind file")
+
+    except:
+        requestcntr = requestcntr + 1
+        if requestcntr == 4:
+            cmd = 4
+            print("request:" + str(r))
+            fnamloc = "ConnectWeather" + basename + ".txt"
+            fnam = open (root + fnamloc, "w") 
+            dtn = datetime.now()
+            s = str(dtn) + '\n'
+            s += "request: " + str(r) + '\n'
+            s += "OSError: " + str(e.errno) + '\n'
+            s += "error: " + str(e) + '\n'
+            s += "cmd: 4" + '\n'
+            fnam.write(s)
+            fnam.close()
 
     fnam = open ("/home/pi/winddata.txt" ,"w")
     s = str(int(windDir)) + "," + str(int(windSpd)) + ","
@@ -650,6 +689,9 @@ def main():
             elif cmd == 3:
                 print ("cmd 3 = test WiFi failure")
                 isRunning = cmd
+            elif cmd == 4:
+                print ("cmd 4 = reboot Connection error")
+                os.system("sudo reboot -h now")                
             else: # unknown
                 print ("cmd " + str(cmd) + "unknown")
                 isRunning = cmd
