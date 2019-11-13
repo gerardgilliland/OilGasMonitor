@@ -10,6 +10,7 @@
 # 2019-04-26 -- E.1 Improve WiFiBoot file name and status
 # 2019-05-18 -- J.1 Add ActiveLoc to selectively start LoadMonitor
 # 2019-07-02 -- N.1 Reboot on a connection error
+# 2019-11-13 -- N.2 Print active location
 
 # Monitor Oil and Gas 
 """
@@ -376,7 +377,8 @@ def savefile(prevfilename):
         locations = slocations.split(",")
         activeLoc = int(locations[0])
         nextLoc = int(locations[1])
-        maxLoc = int(locations[2]) * 2
+        maxLoc = int(locations[2])
+        # print("activeLoc:" + str(activeLoc) + " nextLoc:" + str(nextLoc) + " maxLoc:" + str(maxLoc))
 
         # prints out the directories and files, line by line
         cntr = 0
