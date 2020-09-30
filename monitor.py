@@ -398,8 +398,7 @@ def savefile(prevfilename):
         local = ""
         
         if cntr > maxLoc:  # if the LoadMonitor has not been loading files
-            if Location == nextLoc:  # if I will be loading next time
-                activeLoc = nextLoc  # run LoadMonitor
+            activeLoc = Location  # run LoadMonitor this time
 
         dtn = datetime.now()
         print(dtn, " * done transfering ", " prevfilename ", prevfilename)
