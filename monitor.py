@@ -280,7 +280,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 
         # if a low maxdb then delete the wave file else save it for off line analysis
         if maxdb < dblimit:
-			print(dtn, " * maxdb: ", maxdb, " < dblimit: ", dblimit)
+            print(dtn, " * maxdb: ", maxdb, " < dblimit: ", dblimit)
             #os.remove(sound + prevwavename)
 
         else:
