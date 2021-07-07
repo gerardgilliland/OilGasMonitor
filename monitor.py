@@ -62,7 +62,7 @@ fmt="%(asctime)s %(message)s"
 logging.basicConfig(filename=monlog, level=logging.WARN, format=fmt)
 
 # change location from xx to your location number
-Location = xx`
+Location = xx
 loc = str(Location)
 cmd = 1
 cmdfile = "/home/pi/cmdfile.txt"
