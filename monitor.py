@@ -11,6 +11,8 @@
 # 2019-05-18 -- J.1 Add ActiveLoc to selectively start LoadMonitor
 # 2019-07-02 -- N.1 Reboot on a connection error
 # 2019-11-13 -- N.2 Print active location
+# 2020-10-01 -- A.2 Modify ActivityLoc to independently start LoadMonitor 
+# 2020-11-19 -- Modify to update zActiveLocFile.txt directly
 
 # Monitor Oil and Gas 
 """
@@ -60,7 +62,7 @@ fmt="%(asctime)s %(message)s"
 logging.basicConfig(filename=monlog, level=logging.WARN, format=fmt)
 
 # change location from xx to your location number
-Location = xx
+Location = xx`
 loc = str(Location)
 cmd = 1
 cmdfile = "/home/pi/cmdfile.txt"
@@ -242,6 +244,7 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
     global sound
     global image
     global activeLoc
+    global maxLoc
 
     if prevwavename == "":
         print ("prevwavenmame is null")
@@ -277,7 +280,8 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 
         # if a low maxdb then delete the wave file else save it for off line analysis
         if maxdb < dblimit:
-            os.remove(sound + prevwavename)
+			print(dtn, " * maxdb: ", maxdb, " < dblimit: ", dblimit)
+            #os.remove(sound + prevwavename)
 
         else:
             camera = PiCamera()
@@ -349,7 +353,8 @@ def spectrum(q, prevwavename, prevfilename, prevcameraname):
 def savefile(prevfilename):
     global root
     global activeLoc
-
+    global maxLoc
+	
     cf = open (cmdfile,"r")
     cmd = int(cf.read())
     cf.close
@@ -367,26 +372,12 @@ def savefile(prevfilename):
         # Get the directory and file listing
         # http://stackoverflow.com/questions/3207219/how-to-list-all-files-of-a-directory-in-python
         remote = srv.listdir()
-        srv.get("zActiveLocFile.txt")
-        # Closes the connection
-        srv.close()
-
-        af = open ("zActiveLocFile.txt","r")
-        slocations = af.read()
-        af.close
-        locations = slocations.split(",")
-        activeLoc = int(locations[0])
-        nextLoc = int(locations[1])
-        maxLoc = int(locations[2])
-        # print("activeLoc:" + str(activeLoc) + " nextLoc:" + str(nextLoc) + " maxLoc:" + str(maxLoc))
 
         # prints out the directories and files, line by line
         cntr = 0
         for i in remote:
             if i[:1] < "z":
                 cntr = cntr + 1
-            #else:  # remove the z from the front of the file name.
-            #    i = i[1:]
 
             for j in local:
                 if i == j:
@@ -397,9 +388,33 @@ def savefile(prevfilename):
         remote = ""
         local = ""
         
+        srv.get("zActiveLocFile.txt")
+        af = open ("zActiveLocFile.txt","r")
+        aloc = af.read()
+        af.close
+        try:
+            activeLoc = int(aloc)
+        except ValueError:
+            print("failure to read activeLoc from server")
+            activeLoc = Location
+
+        srv.get("zMaxLocFile.txt")
+        mf = open ("zMaxLocFile.txt","r")
+        mloc = mf.read()
+        mf.close
+        maxLoc = int(mloc)
+        print("activeLoc:" + str(activeLoc), " maxLoc:" + str(maxLoc) )
+
         if cntr > maxLoc:  # if the LoadMonitor has not been loading files
             activeLoc = Location  # run LoadMonitor this time
+            af = open("zActiveLocFile.txt","w")
+            af.write(str(activeLoc))
+            af.close
+            print("Local control for activeLoc: " + str(activeLoc))
+            srv.put("zActiveLocFile.txt")
 
+        # Closes the connection
+        srv.close()
         dtn = datetime.now()
         print(dtn, " * done transfering ", " prevfilename ", prevfilename)
 
